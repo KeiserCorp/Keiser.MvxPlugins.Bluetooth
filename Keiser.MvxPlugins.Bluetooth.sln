@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keiser.MvxPlugins.Bluetooth", "Keiser.MvxPlugins.Bluetooth\Keiser.MvxPlugins.Bluetooth.csproj", "{AD4EAC27-DE7E-4B2A-B24E-63608D12F2BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keiser.MvxPlugins.Bluetooth.Droid", "Keiser.MvxPlugins.Bluetooth.Droid\Keiser.MvxPlugins.Bluetooth.Droid.csproj", "{9357B5E7-09F5-4F50-85D1-0E4F996F1BB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keiser.MvxPlugins.Bluetooth.Touch", "Keiser.MvxPlugins.Bluetooth.Touch\Keiser.MvxPlugins.Bluetooth.Touch.csproj", "{244BAAD4-A850-429D-A0F5-0EC3650D9DB3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD4EAC27-DE7E-4B2A-B24E-63608D12F2BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD4EAC27-DE7E-4B2A-B24E-63608D12F2BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD4EAC27-DE7E-4B2A-B24E-63608D12F2BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD4EAC27-DE7E-4B2A-B24E-63608D12F2BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9357B5E7-09F5-4F50-85D1-0E4F996F1BB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9357B5E7-09F5-4F50-85D1-0E4F996F1BB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9357B5E7-09F5-4F50-85D1-0E4F996F1BB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9357B5E7-09F5-4F50-85D1-0E4F996F1BB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{244BAAD4-A850-429D-A0F5-0EC3650D9DB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{244BAAD4-A850-429D-A0F5-0EC3650D9DB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{244BAAD4-A850-429D-A0F5-0EC3650D9DB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{244BAAD4-A850-429D-A0F5-0EC3650D9DB3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

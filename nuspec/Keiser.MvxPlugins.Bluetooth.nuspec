@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Keiser.MvxPlugins.Bluetooth</id>
+		<version>1.0.1</version>
+		<title>Keiser.MvxPlugins.Bluetooth</title>
+		<authors>Keiser Corp.</authors>
+		<owners>Keiser Corp.</owners>
+			<licenseUrl>https://github.com/KeiserCorp/Keiser.MvxPlugins.Bluetooth/blob/master/LICENSE</licenseUrl>
+			<projectUrl>https://github.com/KeiserCorp/Keiser.MvxPlugins.Bluetooth</projectUrl>
+		<requireLicenseAcceptance>true</requireLicenseAcceptance>
+		<description>This package contains the 'Bluetooth' plugin for MvvmCross v3.</description>
+		<copyright>Copyright 2014</copyright>
+		<tags>xamarin mvvmcross mvx keiser socket</tags>
+		<dependencies>
+			<dependency id="MvvmCross.HotTuna.CrossCore" version="3.2.1" />
+		</dependencies>
+	</metadata>
+	<files>
+		<!-- PCL -->
+		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\portable-net45+win+wp80+MonoAndroid10+MonoTouch10\Keiser.MvxPlugins.Bluetooth.dll" />
+
+		<!-- droid -->
+		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\MonoAndroid\Keiser.MvxPlugins.Bluetooth.dll" />
+		<file src="..\Keiser.MvxPlugins.Bluetooth.Droid\bin\Release\Keiser.MvxPlugins.Bluetooth.Droid.dll" target="lib\MonoAndroid\Keiser.MvxPlugins.Bluetooth.Droid.dll" />
+		<file src="BootstrapContent\BluetoothPluginBootstrap.cs.pp" target="content\MonoAndroid\Bootstrap\BluetoothPluginBootstrap.cs.pp" />
+		
+		<!-- touch -->
+		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\MonoTouch\Keiser.MvxPlugins.Bluetooth.dll" />
+		<file src="..\Keiser.MvxPlugins.Bluetooth.Touch\bin\Release\Keiser.MvxPlugins.Bluetooth.Touch.dll" target="lib\MonoTouch\Keiser.MvxPlugins.Bluetooth.Touch.dll" />
+		<file src="BootstrapContent\BluetoothTouchPluginBootstrap.cs.pp" target="content\MonoTouch\Bootstrap\BluetoothPluginBootstrap.cs.pp" />
+	</files>
+</package>
