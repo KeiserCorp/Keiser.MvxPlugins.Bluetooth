@@ -2,7 +2,7 @@
 <package >
 	<metadata>
 		<id>Keiser.MvxPlugins.Bluetooth</id>
-		<version>1.0.1</version>
+		<version>1.0.4</version>
 		<title>Keiser.MvxPlugins.Bluetooth</title>
 		<authors>Keiser Corp.</authors>
 		<owners>Keiser Corp.</owners>
@@ -19,6 +19,7 @@
 	<files>
 		<!-- PCL -->
 		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\portable-net45+win+wp80+MonoAndroid10+MonoTouch10\Keiser.MvxPlugins.Bluetooth.dll" />
+		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\portable-net45+win+wp80+Xamarin.iOS10+MonoAndroid10+MonoTouch10\Keiser.MvxPlugins.Bluetooth.dll" />
 
 		<!-- droid -->
 		<file src="..\Keiser.MvxPlugins.Bluetooth\bin\Release\Keiser.MvxPlugins.Bluetooth.dll" target="lib\MonoAndroid\Keiser.MvxPlugins.Bluetooth.dll" />
