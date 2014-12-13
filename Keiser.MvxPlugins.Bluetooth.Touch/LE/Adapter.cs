@@ -8,7 +8,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Touch.LE
 
     public class Adapter : IAdapter
     {
-        protected static CBCentralManager _central = new CBCentralManager(MonoTouch.CoreFoundation.DispatchQueue.CurrentQueue);
+        protected static CBCentralManager _central = new CBCentralManager(MonoTouch.CoreFoundation.DispatchQueue.DefaultGlobalQueue);
         protected static Adapter _adapter = new Adapter();
 
         protected static bool _leSupported = true;

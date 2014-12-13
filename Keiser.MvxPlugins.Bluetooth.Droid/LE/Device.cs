@@ -25,7 +25,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             // Flags Section
             startingIndex += scanRecord[startingIndex] + 1;
             // Advertisment Data Section
-            int length = scanRecord[startingIndex++];
+            int length = scanRecord[startingIndex] - 1;
+            startingIndex += 2;
             _advertisementData = new byte[length];
             Array.Copy(scanRecord, startingIndex, _advertisementData, 0, length);
         }
