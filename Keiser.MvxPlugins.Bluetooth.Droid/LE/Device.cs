@@ -8,7 +8,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
     {
         protected BluetoothDevice _nativeDevice;
         protected int _rssi;
-        protected byte[] _advertisementData;
+        protected byte[] _advertisementData = new byte[0];
 
         public Device(BluetoothDevice nativeDevice, int rssi, byte[] scanRecord)
         {
@@ -20,22 +20,35 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected void SetAdvertisingData(byte[] scanRecord)
         {
             int startingIndex = 0;
-            // Name Section
-            startingIndex += scanRecord[startingIndex] + 1;
-            // Flags Section
-            startingIndex += scanRecord[startingIndex] + 1;
-            // Advertisment Data Section
-            int length = scanRecord[startingIndex] - 1;
-            startingIndex += 2;
-            _advertisementData = new byte[length];
-            Array.Copy(scanRecord, startingIndex, _advertisementData, 0, length);
+            if (scanRecord.Length > 3)
+            {
+                // Name Section
+                startingIndex += scanRecord[startingIndex] + 1;
+                // Flags Section
+                startingIndex += scanRecord[startingIndex] + 1;
+                // Advertisment Data Section
+                int length = scanRecord[startingIndex] - 1;
+                if (length > 0)
+                {
+                    startingIndex += 2;
+                    _advertisementData = new byte[length];
+                    Array.Copy(scanRecord, startingIndex, _advertisementData, 0, length);
+                }
+            }
         }
 
         public override Address ID
         {
             get
             {
-                return new Address(_nativeDevice.Address);
+                try
+                {
+                    return new Address(_nativeDevice.Address);
+                }
+                catch
+                {
+                    return new Address(string.Empty);
+                }
             }
         }
 
@@ -43,7 +56,14 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         {
             get
             {
-                return _nativeDevice.Name;
+                try
+                {
+                    return _nativeDevice.Name;
+                }
+                catch
+                {
+                    return string.Empty;
+                }
             }
         }
 
