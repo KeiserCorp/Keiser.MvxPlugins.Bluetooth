@@ -6,12 +6,28 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
     public class Adapter : Java.Lang.Object, IAdapter, BluetoothAdapter.ILeScanCallback
     {
-        protected static Context _context = Android.App.Application.Context;
-        protected static BluetoothManager _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
-        protected static BluetoothAdapter _adapter = _manager.Adapter;
+        protected Context _context = Android.App.Application.Context;
+        protected BluetoothManager _manager;
+        protected BluetoothAdapter _adapter;
 
-        protected static bool _leSupported = _context.PackageManager.HasSystemFeature(Android.Content.PM.PackageManager.FeatureBluetoothLe);
+        protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
+
+        public Adapter()
+        {
+            try
+            {
+                _leSupported = _context.PackageManager.HasSystemFeature(Android.Content.PM.PackageManager.FeatureBluetoothLe);
+            }
+            catch{ }
+            if (LESupported)
+                try
+                {
+                    _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
+                    _adapter = _manager.Adapter;
+                }
+                catch { }
+        }
 
         protected bool _isScanning;
         public bool IsScanning
@@ -27,6 +43,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         public void StartScan(IScanCallback scanCallback)
         {
+            if (!LESupported)
+                return;
             StopScan();
             _scanCallback = scanCallback;
             if (!_adapter.IsEnabled)
