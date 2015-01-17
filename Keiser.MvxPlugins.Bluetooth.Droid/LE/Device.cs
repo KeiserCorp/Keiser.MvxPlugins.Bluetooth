@@ -22,17 +22,19 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             int startingIndex = 0;
             if (scanRecord.Length > 3)
             {
-                // Name Section
-                startingIndex += scanRecord[startingIndex] + 1;
-                // Flags Section
-                startingIndex += scanRecord[startingIndex] + 1;
-                // Advertisment Data Section
-                int length = scanRecord[startingIndex] - 1;
-                if (length > 0)
+                while (startingIndex < scanRecord.Length && scanRecord[startingIndex + 1] != 0xff)
                 {
-                    startingIndex += 2;
-                    _advertisementData = new byte[length];
-                    Array.Copy(scanRecord, startingIndex, _advertisementData, 0, length);
+                    startingIndex += scanRecord[startingIndex] + 1;
+                }
+                if (scanRecord[startingIndex + 1] == 0xff)
+                {
+                    int length = scanRecord[startingIndex] - 1;
+                    if (length > 0)
+                    {
+                        startingIndex += 2;
+                        _advertisementData = new byte[length];
+                        Array.Copy(scanRecord, startingIndex, _advertisementData, 0, length);
+                    }
                 }
             }
         }
