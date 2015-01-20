@@ -22,11 +22,11 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             int startingIndex = 0;
             if (scanRecord.Length > 3)
             {
-                while (startingIndex < scanRecord.Length && scanRecord[startingIndex + 1] != 0xff)
+                while ((startingIndex + 1) < scanRecord.Length && scanRecord[startingIndex + 1] != 0xff)
                 {
                     startingIndex += scanRecord[startingIndex] + 1;
                 }
-                if (scanRecord[startingIndex + 1] == 0xff)
+                if ((startingIndex + 1) < scanRecord.Length && scanRecord[startingIndex + 1] == 0xff)
                 {
                     int length = scanRecord[startingIndex] - 1;
                     if (length > 0)
