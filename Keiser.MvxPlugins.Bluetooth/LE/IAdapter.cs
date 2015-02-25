@@ -4,7 +4,7 @@
     {
         bool LESupported { get; }
         bool IsScanning { get; }
-        void StartScan(IScanCallback scanCallback);
+        void StartScan(IScanCallback scanCallback, bool toggleRadios = true);
         void StopScan();
     }
 }

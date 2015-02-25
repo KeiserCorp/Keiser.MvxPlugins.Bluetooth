@@ -30,7 +30,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Touch.LE
         }
 
         protected IScanCallback _scanCallback;
-        public void StartScan(IScanCallback scanCallback)
+        public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
         {
             _scanCallback = scanCallback;
             AsyncStartScan();
