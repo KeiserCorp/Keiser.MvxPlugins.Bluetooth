@@ -6,5 +6,6 @@
         bool IsScanning { get; }
         void StartScan(IScanCallback scanCallback, bool toggleRadios = true);
         void StopScan();
+        void CheckScan();
     }
 }

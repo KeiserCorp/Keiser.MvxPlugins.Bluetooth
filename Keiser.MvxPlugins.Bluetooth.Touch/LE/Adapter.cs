@@ -45,6 +45,13 @@ namespace Keiser.MvxPlugins.Bluetooth.Touch.LE
             }
         }
 
+        public void CheckScan()
+        {
+#pragma warning disable 4014
+            //System.Threading.Tasks.Task.Run(() => RecycleRadios());
+#pragma warning restore 4014
+        }
+
         readonly AutoResetEvent stateChanged = new AutoResetEvent(false);
 
         async Task WaitForState(CBCentralManagerState state)

@@ -121,6 +121,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             {
                 RadioTimer.Cancel();
             }
+            RadioTimer = null;
         }
 
         private object _radioTimeoutLocker = new object();
@@ -133,7 +134,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Trace.Info("Radio Timeout: " + DateTime.Now.ToLongTimeString() + " Last: " + RadioTimeoutLast.ToLongTimeString());
 #endif
             // First time or last time was more than twice the timeout duration
-            if(RadioTimeoutLast >= DateTime.Now.AddMilliseconds(Timeout * 2))
+            if (RadioTimeoutLast.AddMilliseconds(Timeout * 2) < DateTime.Now)
             {
                 RecylceScan();
             }
@@ -145,6 +146,13 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             SetScanTimer();
         }
 
+        public void CheckScan()
+        {
+#pragma warning disable 4014
+            System.Threading.Tasks.Task.Run(() => RadioScanTimeout());
+#pragma warning restore 4014
+        }
+
         protected void RecycleRadios()
         {
 #if DEBUG
@@ -153,8 +161,13 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             //DisabledBLE();
             if (WifiEnabled)
             {
-                _wifiManager.SetWifiEnabled(false);
-                _wifiManager.SetWifiEnabled(true);
+#pragma warning disable 4014
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    _wifiManager.SetWifiEnabled(false);
+                    _wifiManager.SetWifiEnabled(true);
+                });
+#pragma warning restore 4014
             }
             RecylceScan();
         }
@@ -164,6 +177,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             _adapter.StopLeScan(this);
             _adapter.Disable();
         }
-        
+
     }
 }

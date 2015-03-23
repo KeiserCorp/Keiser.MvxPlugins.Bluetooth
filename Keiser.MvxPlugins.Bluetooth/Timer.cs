@@ -18,7 +18,9 @@
                 {
                     if (IsCancellationRequested)
                         break;
+#pragma warning disable 4014
                     Task.Run(() => tuple.Item1(tuple.Item2));
+#pragma warning restore 4014
                     if (period > 0)
                         await Task.Delay(period);
                 } while (period > 0);
