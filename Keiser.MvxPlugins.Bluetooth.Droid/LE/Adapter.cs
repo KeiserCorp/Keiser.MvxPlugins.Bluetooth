@@ -50,10 +50,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 catch { }
         }
 
+        protected object _isScanningLocker = new object();
         protected bool _isScanning;
         public bool IsScanning
         {
-            get { return _isScanning; }
+            get { lock (_isScanningLocker) return _isScanning; }
+            protected set { lock (_isScanningLocker) _isScanning = value; }
         }
 
         protected IScanCallback _scanCallback;
@@ -71,7 +73,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             _scanCallback = scanCallback;
             ToggleRadio = toggleRadios;
             StartActualScan();
-            _isScanning = true;
+            IsScanning = true;
         }
 
         private void StartActualScan()
@@ -93,11 +95,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         public void StopScan()
         {
-            if (_isScanning)
-            {
-                StopActualScan();
-                _isScanning = false;
-            }
+            StopActualScan();
+            IsScanning = false;
         }
 
         private void StopActualScan()
@@ -130,20 +129,23 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected void RadioScanTimeout()
         {
+            if (IsScanning)
+            {
 #if DEBUG
-            Trace.Info("Radio Timeout: " + DateTime.Now.ToLongTimeString() + " Last: " + RadioTimeoutLast.ToLongTimeString());
+                Trace.Info("Radio Timeout: " + DateTime.Now.ToLongTimeString() + " Last: " + RadioTimeoutLast.ToLongTimeString());
 #endif
-            // First time or last time was more than twice the timeout duration
-            if (RadioTimeoutLast.AddMilliseconds(Timeout * 2) < DateTime.Now)
-            {
-                RecylceScan();
+                // First time or last time was more than twice the timeout duration
+                if (RadioTimeoutLast.AddMilliseconds(Timeout * 2) < DateTime.Now)
+                {
+                    RecylceScan();
+                }
+                else
+                {
+                    RecycleRadios();
+                }
+                RadioTimeoutLast = DateTime.Now;
+                SetScanTimer();
             }
-            else
-            {
-                RecycleRadios();
-            }
-            RadioTimeoutLast = DateTime.Now;
-            SetScanTimer();
         }
 
         public void CheckScan()
