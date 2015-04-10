@@ -2,7 +2,7 @@
 <package >
 	<metadata>
 		<id>Keiser.MvxPlugins.Bluetooth</id>
-		<version>1.0.13</version>
+		<version>1.1.0</version>
 		<title>Keiser.MvxPlugins.Bluetooth</title>
 		<authors>Keiser Corp.</authors>
 		<owners>Keiser Corp.</owners>
@@ -10,7 +10,7 @@
 			<projectUrl>https://github.com/KeiserCorp/Keiser.MvxPlugins.Bluetooth</projectUrl>
 		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>This package contains the 'Bluetooth' plugin for MvvmCross v3.</description>
-		<copyright>Copyright 2014</copyright>
+		<copyright>Copyright 2015</copyright>
 		<tags>xamarin mvvmcross mvx keiser socket</tags>
 		<dependencies>
 			<dependency id="MvvmCross.HotTuna.CrossCore" version="3.2.1" />
