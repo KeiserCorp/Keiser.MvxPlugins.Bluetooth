@@ -5,6 +5,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
     using Android.Net.Wifi;
     using Keiser.MvxPlugins.Bluetooth.LE;
     using System;
+    using System.Threading.Tasks;
 
     public class Adapter : Java.Lang.Object, IAdapter, BluetoothAdapter.ILeScanCallback
     {
@@ -12,9 +13,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothManager _manager;
         protected BluetoothAdapter _adapter;
 
-        protected static WifiManager _wifiManager;
+        //protected static WifiManager _wifiManager;
 
-        private const int Timeout = 8000;
+        private const int RadioTimeout = 8000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -23,14 +24,13 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private bool _toggleRadio = false;
         protected bool ToggleRadio { get { lock (_radioToggleLocker) return _toggleRadio; } set { lock (_radioToggleLocker) _toggleRadio = value; } }
 
-        private object _wifiEnabledLocker = new object();
-        private bool _wifiEnabled = false;
-        protected bool WifiEnabled { get { lock (_wifiEnabledLocker) return _wifiEnabled; } set { lock (_wifiEnabledLocker) _wifiEnabled = value; } }
+        //private object _wifiEnabledLocker = new object();
+        //private bool _wifiEnabled = false;
+        //protected bool WifiEnabled { get { lock (_wifiEnabledLocker) return _wifiEnabled; } set { lock (_wifiEnabledLocker) _wifiEnabled = value; } }
 
         private object _radioTimerLocker = new object();
         private Timer _radioTimer;
         protected Timer RadioTimer { get { lock (_radioTimerLocker) return _radioTimer; } set { lock (_radioTimerLocker) _radioTimer = value; } }
-
 
         public Adapter()
         {
@@ -44,8 +44,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 {
                     _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
                     _adapter = _manager.Adapter;
-                    _wifiManager = (WifiManager)Android.App.Application.Context.GetSystemService(Context.WifiService);
-                    WifiEnabled = _wifiManager.IsWifiEnabled;
+                    //_wifiManager = (WifiManager)Android.App.Application.Context.GetSystemService(Context.WifiService);
+                    //WifiEnabled = _wifiManager.IsWifiEnabled;
                 }
                 catch { }
         }
@@ -61,11 +61,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected IScanCallback _scanCallback;
         public void OnLeScan(BluetoothDevice device, int rssi, byte[] scanRecord)
         {
-            _scanCallback.ScanCallback(new Device(device, rssi, scanRecord));
-            SetScanTimer();
+            Task.Run(() =>
+                {
+                    _scanCallback.ScanCallback(new Device(device, rssi, scanRecord));
+                    if (ToggleRadio)
+                        SetScanTimer();
+                });
         }
 
-        public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
+        public void StartScan(IScanCallback scanCallback, bool toggleRadios = false)
         {
             if (!LESupported)
                 return;
@@ -81,7 +85,10 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             if (!_adapter.IsEnabled)
                 _adapter.Enable();
             _adapter.StartLeScan(this);
-            SetScanTimer();
+            if (ToggleRadio)
+            {
+                SetScanTimer(RadioTimeout * 4);
+            }
         }
 
         protected void RecylceScan()
@@ -91,6 +98,28 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 #endif
             StopActualScan();
             StartActualScan();
+        }
+
+//        protected void RecycleRadios()
+//        {
+//#if DEBUG
+//            Trace.Info("Recycling Radios");
+//#endif
+//            if (WifiEnabled)
+//            {
+//                Task.Run(() =>
+//                {
+//                    _wifiManager.SetWifiEnabled(false);
+//                    _wifiManager.SetWifiEnabled(true);
+//                });
+//            }
+//            RecylceScan();
+//        }
+
+        protected void DisabledBLE()
+        {
+            _adapter.StopLeScan(this);
+            _adapter.Disable();
         }
 
         public void StopScan()
@@ -105,13 +134,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             _adapter.StopLeScan(this);
         }
 
-        protected void SetScanTimer()
+        protected void SetScanTimer(int timeout = 0)
         {
-            if (ToggleRadio)
-            {
-                CancelScanTimer();
-                RadioTimer = new Timer(_ => RadioScanTimeout(), null, Timeout, 0);
-            }
+            if (timeout == 0)
+                timeout = RadioTimeout;
+            CancelScanTimer();
+            RadioTimer = new Timer(_ => RadioScanTimeout(), null, timeout, 0);
         }
 
         protected void CancelScanTimer()
@@ -123,62 +151,14 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             RadioTimer = null;
         }
 
-        private object _radioTimeoutLocker = new object();
-        private DateTime _radioTimeoutLast = DateTime.Now;
-        protected DateTime RadioTimeoutLast { get { lock (_radioTimeoutLocker) return _radioTimeoutLast; } set { lock (_radioTimeoutLocker) _radioTimeoutLast = value; } }
-
         protected void RadioScanTimeout()
         {
             if (IsScanning)
             {
-#if DEBUG
-                Trace.Info("Radio Timeout: " + DateTime.Now.ToLongTimeString() + " Last: " + RadioTimeoutLast.ToLongTimeString());
-#endif
-                // First time or last time was more than twice the timeout duration
-                if (RadioTimeoutLast.AddMilliseconds(Timeout * 2) < DateTime.Now)
-                {
-                    RecylceScan();
-                }
-                else
-                {
-                    RecycleRadios();
-                }
-                RadioTimeoutLast = DateTime.Now;
+                //RecycleRadios();
+                RecylceScan();
                 SetScanTimer();
             }
         }
-
-        public void CheckScan()
-        {
-#pragma warning disable 4014
-            System.Threading.Tasks.Task.Run(() => RadioScanTimeout());
-#pragma warning restore 4014
-        }
-
-        protected void RecycleRadios()
-        {
-#if DEBUG
-            Trace.Info("Recycling Radios");
-#endif
-            //DisabledBLE();
-            if (WifiEnabled)
-            {
-#pragma warning disable 4014
-                System.Threading.Tasks.Task.Run(() =>
-                {
-                    _wifiManager.SetWifiEnabled(false);
-                    _wifiManager.SetWifiEnabled(true);
-                });
-#pragma warning restore 4014
-            }
-            RecylceScan();
-        }
-
-        protected void DisabledBLE()
-        {
-            _adapter.StopLeScan(this);
-            _adapter.Disable();
-        }
-
     }
 }
