@@ -51,7 +51,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         }
 
         protected object _isScanningLocker = new object();
-        protected bool _isScanning;
+        protected bool _isScanning = false;
         public bool IsScanning
         {
             get { lock (_isScanningLocker) return _isScanning; }
@@ -69,7 +69,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 });
         }
 
-        public void StartScan(IScanCallback scanCallback, bool toggleRadios = false)
+        public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
         {
             if (!LESupported)
                 return;
@@ -113,14 +113,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 //                    _wifiManager.SetWifiEnabled(true);
 //                });
 //            }
+//            DisabledBLE();
 //            RecylceScan();
 //        }
 
-        protected void DisabledBLE()
-        {
-            _adapter.StopLeScan(this);
-            _adapter.Disable();
-        }
+        //protected void DisabledBLE()
+        //{
+        //    _adapter.StopLeScan(this);
+        //    _adapter.Disable();
+        //}
 
         public void StopScan()
         {
@@ -155,7 +156,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         {
             if (IsScanning)
             {
-                //RecycleRadios();
                 RecylceScan();
                 SetScanTimer();
             }

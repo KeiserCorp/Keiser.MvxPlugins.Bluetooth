@@ -6,13 +6,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
     public class Device : DeviceBase
     {
-        //protected BluetoothDevice _nativeDevice;
-        protected int _rssi;
-        protected byte[] _advertisementData = new byte[0];
-
         public Device(BluetoothDevice nativeDevice, int rssi, byte[] scanRecord)
         {
-            //_nativeDevice = nativeDevice;
             try
             {
                 _id = nativeDevice.Address;
@@ -33,6 +28,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             SetAdvertisingData(scanRecord);
         }
 
+        protected byte[] _advertisementData = new byte[0];
         protected void SetAdvertisingData(byte[] scanRecord)
         {
             int startingIndex = 0;
@@ -80,6 +76,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
         }
 
+        protected int _rssi;
         public override int Rssi
         {
             get
