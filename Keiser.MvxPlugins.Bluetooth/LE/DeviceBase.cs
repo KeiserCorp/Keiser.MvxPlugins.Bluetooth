@@ -35,13 +35,5 @@
                 throw new NotImplementedException();
             }
         }
-
-        public virtual object NativeDevice
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 }

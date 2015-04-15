@@ -56,14 +56,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         {
             get
             {
-                try
-                {
-                    return new Address(_id);
-                }
-                catch
-                {
-                    return new Address(string.Empty);
-                }
+                return new Address(_id);
             }
         }
 
@@ -90,14 +83,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             get
             {
                 return _advertisementData;
-            }
-        }
-
-        public override object NativeDevice
-        {
-            get
-            {
-                return null;
             }
         }
     }

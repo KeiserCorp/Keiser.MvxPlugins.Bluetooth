@@ -62,7 +62,7 @@
             }
         }
 
-        public override object NativeDevice
+        private object NativeDevice
         {
             get
             {

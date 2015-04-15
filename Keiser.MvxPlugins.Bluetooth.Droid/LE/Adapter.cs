@@ -61,9 +61,10 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected IScanCallback _scanCallback;
         public void OnLeScan(BluetoothDevice device, int rssi, byte[] scanRecord)
         {
+            Device basicDevice = new Device(device, rssi, scanRecord);
             Task.Run(() =>
                 {
-                    _scanCallback.ScanCallback(new Device(device, rssi, scanRecord));
+                    _scanCallback.ScanCallback(basicDevice);
                     if (ToggleRadio)
                         SetScanTimer();
                 });
@@ -74,6 +75,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             if (!LESupported)
                 return;
             StopScan();
+            //ClearBluedroidCache();
             _scanCallback = scanCallback;
             ToggleRadio = toggleRadios;
             StartActualScan();
@@ -100,22 +102,22 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             StartActualScan();
         }
 
-//        protected void RecycleRadios()
-//        {
-//#if DEBUG
-//            Trace.Info("Recycling Radios");
-//#endif
-//            if (WifiEnabled)
-//            {
-//                Task.Run(() =>
-//                {
-//                    _wifiManager.SetWifiEnabled(false);
-//                    _wifiManager.SetWifiEnabled(true);
-//                });
-//            }
-//            DisabledBLE();
-//            RecylceScan();
-//        }
+        //        protected void RecycleRadios()
+        //        {
+        //#if DEBUG
+        //            Trace.Info("Recycling Radios");
+        //#endif
+        //            if (WifiEnabled)
+        //            {
+        //                Task.Run(() =>
+        //                {
+        //                    _wifiManager.SetWifiEnabled(false);
+        //                    _wifiManager.SetWifiEnabled(true);
+        //                });
+        //            }
+        //            DisabledBLE();
+        //            RecylceScan();
+        //        }
 
         //protected void DisabledBLE()
         //{
@@ -158,6 +160,54 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             {
                 RecylceScan();
                 SetScanTimer();
+            }
+        }
+
+        protected void ClearBluedroidCache()
+        {
+#if DEBUG
+            Trace.Info("Clearing Bluetooth Cache");
+#endif
+            _adapter.StopLeScan(this);
+            _adapter.Disable();
+            RunSystemCommand("pm disable com.android.bluetooth");
+            RunSystemCommand("am force-stop com.android.bluetooth");
+            RunSystemCommand("rm -rf /data/misc/bluedroid/*");
+            RunSystemCommand("pm enable com.android.bluetooth");
+            _adapter.Enable();
+#if DEBUG
+            Trace.Info("Bluetooth Cache Cleared");
+#endif
+        }
+
+        private static void RunSystemCommand(string command)
+        {
+            // Requires root access to run
+            try
+            {
+                Java.Lang.Process process = Java.Lang.Runtime.GetRuntime().Exec("su");
+                Java.IO.DataOutputStream outputStream = new Java.IO.DataOutputStream(process.OutputStream);
+
+                outputStream.WriteBytes(command + "\n");
+                outputStream.WriteBytes("exit\n");
+                outputStream.Flush();
+                try
+                {
+                    process.WaitFor();
+                }
+                catch (Exception e)
+                {
+#if DEBUG
+                    Trace.Error(e.ToString());
+#endif
+                }
+                outputStream.Close();
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                Trace.Error(e.ToString());
+#endif
             }
         }
     }

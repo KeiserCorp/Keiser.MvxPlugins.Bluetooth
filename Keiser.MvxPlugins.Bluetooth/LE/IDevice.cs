@@ -6,6 +6,5 @@
         string Name { get; }
         int Rssi { get; }
         byte[] AdvertisingData { get; }
-        object NativeDevice { get; }
     }
 }
