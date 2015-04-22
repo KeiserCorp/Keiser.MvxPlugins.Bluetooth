@@ -13,9 +13,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothManager _manager;
         protected BluetoothAdapter _adapter;
 
-        //protected static WifiManager _wifiManager;
-
-        private const int RadioTimeout = 15000;
+        private const int RadioTimeout = 7000;//15000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -23,10 +21,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private object _radioToggleLocker = new object();
         private bool _toggleRadio = false;
         protected bool ToggleRadio { get { lock (_radioToggleLocker) return _toggleRadio; } set { lock (_radioToggleLocker) _toggleRadio = value; } }
-
-        //private object _wifiEnabledLocker = new object();
-        //private bool _wifiEnabled = false;
-        //protected bool WifiEnabled { get { lock (_wifiEnabledLocker) return _wifiEnabled; } set { lock (_wifiEnabledLocker) _wifiEnabled = value; } }
 
         private object _radioTimerLocker = new object();
         private Timer _radioTimer;
@@ -49,8 +43,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 {
                     _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
                     _adapter = _manager.Adapter;
-                    //_wifiManager = (WifiManager)Android.App.Application.Context.GetSystemService(Context.WifiService);
-                    //WifiEnabled = _wifiManager.IsWifiEnabled;
+                    Task.Run(() => StartCacheTimer());
                 }
                 catch { }
         }
@@ -70,8 +63,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Task.Run(() =>
                 {
                     _scanCallback.ScanCallback(basicDevice);
-                    if (ToggleRadio)
-                        SetScanTimer();
+                    //if (ToggleRadio && false)
+                    //    SetScanTimer();
                 });
         }
 
@@ -83,7 +76,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             _scanCallback = scanCallback;
             ToggleRadio = toggleRadios;
             StartActualScan();
-            StartCacheTimer();
             IsScanning = true;
         }
 
@@ -114,37 +106,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 #endif
             StopActualScan();
             ClearBluedroidCache();
-            StartActualScan();
+            if (IsScanning)
+                StartActualScan();
         }
-
-        //        protected void RecycleRadios()
-        //        {
-        //#if DEBUG
-        //            Trace.Info("Recycling Radios");
-        //#endif
-        //            if (WifiEnabled)
-        //            {
-        //                Task.Run(() =>
-        //                {
-        //                    _wifiManager.SetWifiEnabled(false);
-        //                    _wifiManager.SetWifiEnabled(true);
-        //                });
-        //            }
-        //            DisabledBLE();
-        //            RecylceScan();
-        //        }
-
-        //protected void DisabledBLE()
-        //{
-        //    _adapter.StopLeScan(this);
-        //    _adapter.Disable();
-        //}
 
         public void StopScan()
         {
             StopActualScan();
-            StopCacheTimer();
             IsScanning = false;
+            Task.Run(() => StartCacheTimer());
         }
 
         private void StopActualScan()
@@ -182,6 +152,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected void StartCacheTimer()
         {
             StopCacheTimer();
+            ClearCache();
             CacheTimer = new Timer(_ => ClearCache(), null, CacheTimeout, CacheTimeout);
         }
 
@@ -221,20 +192,26 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 {
                     process.WaitFor();
                 }
+#if DEBUG
                 catch (Exception e)
                 {
-#if DEBUG
+
                     Trace.Error(e.ToString());
-#endif
                 }
+#else
+                catch{}
+#endif
                 outputStream.Close();
             }
+#if DEBUG
             catch (Exception e)
             {
-#if DEBUG
+
                 Trace.Error(e.ToString());
-#endif
             }
+#else
+            catch { }
+#endif
         }
     }
 }
