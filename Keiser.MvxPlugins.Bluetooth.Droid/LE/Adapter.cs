@@ -13,7 +13,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothManager _manager;
         protected BluetoothAdapter _adapter;
 
-        private const int RadioTimeout = 7000;//15000;
+        private const int RadioTimeout = 250;//15000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -26,10 +26,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private Timer _radioTimer;
         protected Timer RadioTimer { get { lock (_radioTimerLocker) return _radioTimer; } set { lock (_radioTimerLocker) _radioTimer = value; } }
 
-        private const int CacheTimeout = 1000 * 60 * 60 * 7;//120;
-        private object _cacheTimerLocker = new object();
-        private Timer _cahceTimer;
-        protected Timer CacheTimer { get { lock (_cacheTimerLocker) return _cahceTimer; } set { lock (_cacheTimerLocker) _cahceTimer = value; } }
+        protected static WifiManager WifiManager;
+        private object _wifiEnabledLocker = new object();
+        private bool _wifiEnabled = false;
+        protected bool WifiEnabled { get { lock (_wifiEnabledLocker) return _wifiEnabled; } set { lock (_wifiEnabledLocker) _wifiEnabled = value; } }
+
+        //private const int CacheTimeout = 1000 * 60 * 60 * 7;//120;
+        //private object _cacheTimerLocker = new object();
+        //private Timer _cahceTimer;
+        //protected Timer CacheTimer { get { lock (_cacheTimerLocker) return _cahceTimer; } set { lock (_cacheTimerLocker) _cahceTimer = value; } }
 
         public Adapter()
         {
@@ -43,9 +48,29 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 {
                     _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
                     _adapter = _manager.Adapter;
-                    Task.Run(() => StartCacheTimer());
+                    Task.Run(() => ClearBluedroidCache());
+                    GetWifi();
+                    //Task.Run(() => StartCacheTimer());
                 }
                 catch { }
+        }
+
+        protected void GetWifi()
+        {
+            WifiManager = (WifiManager)Android.App.Application.Context.GetSystemService(Context.WifiService);
+            WifiEnabled = WifiManager.IsWifiEnabled;
+        }
+
+        protected void DisableWifi()
+        {
+            if (WifiEnabled)
+                WifiManager.SetWifiEnabled(false);
+        }
+
+        protected void EnableWifi()
+        {
+            if (WifiEnabled)
+                WifiManager.SetWifiEnabled(true);
         }
 
         protected object _isScanningLocker = new object();
@@ -77,6 +102,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             ToggleRadio = toggleRadios;
             StartActualScan();
             IsScanning = true;
+            Task.Run(() => DisableWifi());
         }
 
         private void StartActualScan()
@@ -99,22 +125,24 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             StartActualScan();
         }
 
-        protected void ClearCache()
-        {
-#if DEBUG
-            Trace.Info("Clearing Cache");
-#endif
-            StopActualScan();
-            ClearBluedroidCache();
-            if (IsScanning)
-                StartActualScan();
-        }
+        //        protected void ClearCache()
+        //        {
+        //#if DEBUG
+        //            Trace.Info("Clearing Cache");
+        //#endif
+        //            StopActualScan();
+        //            ClearBluedroidCache();
+        //            if (IsScanning)
+        //                StartActualScan();
+        //        }
 
         public void StopScan()
         {
             StopActualScan();
             IsScanning = false;
-            Task.Run(() => StartCacheTimer());
+            EnableWifi();
+            Task.Run(() => ClearBluedroidCache());
+            //Task.Run(() => StartCacheTimer());
         }
 
         private void StopActualScan()
@@ -149,19 +177,19 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
         }
 
-        protected void StartCacheTimer()
-        {
-            StopCacheTimer();
-            ClearCache();
-            CacheTimer = new Timer(_ => ClearCache(), null, CacheTimeout, CacheTimeout);
-        }
+        //protected void StartCacheTimer()
+        //{
+        //    StopCacheTimer();
+        //    ClearCache();
+        //    CacheTimer = new Timer(_ => ClearCache(), null, CacheTimeout, CacheTimeout);
+        //}
 
-        protected void StopCacheTimer()
-        {
-            if (CacheTimer != null)
-                CacheTimer.Cancel();
-            CacheTimer = null;
-        }
+        //protected void StopCacheTimer()
+        //{
+        //    if (CacheTimer != null)
+        //        CacheTimer.Cancel();
+        //    CacheTimer = null;
+        //}
 
         protected void ClearBluedroidCache()
         {
@@ -199,7 +227,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                     Trace.Error(e.ToString());
                 }
 #else
-                catch{}
+                catch { }
 #endif
                 outputStream.Close();
             }
