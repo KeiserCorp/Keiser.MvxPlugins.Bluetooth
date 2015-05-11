@@ -14,6 +14,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothAdapter _adapter;
 
         private const int RadioTimeout = 250;//15000;
+        private const int CheckTimeout = 7000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -25,6 +26,10 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private object _radioTimerLocker = new object();
         private Timer _radioTimer;
         protected Timer RadioTimer { get { lock (_radioTimerLocker) return _radioTimer; } set { lock (_radioTimerLocker) _radioTimer = value; } }
+
+        private object _checkTimerLocker = new object();
+        private Timer _checkTimer;
+        protected Timer CheckTimer { get { lock (_checkTimerLocker) return _checkTimer; } set { lock (_checkTimerLocker) _checkTimer = value; } }
 
         protected static WifiManager WifiManager;
         private object _wifiEnabledLocker = new object();
@@ -82,6 +87,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Task.Run(() =>
                 {
                     _scanCallback.ScanCallback(basicDevice);
+                    SetCheckTimer();
                 });
         }
 
@@ -104,7 +110,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             _adapter.StartLeScan(this);
             if (ToggleRadio)
             {
-                SetScanTimer(RadioTimeout);
+                SetScanTimer();
+                SetCheckTimer();
             }
         }
 
@@ -128,6 +135,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private void StopActualScan()
         {
             CancelScanTimer();
+            CancelCheckTimer();
             _adapter.StopLeScan(this);
         }
 
@@ -154,6 +162,37 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             {
                 RecylceScan();
                 SetScanTimer();
+            }
+        }
+
+        protected void SetCheckTimer(int timeout = 0)
+        {
+            if (timeout == 0)
+                timeout = CheckTimeout;
+            CancelCheckTimer();
+            CheckTimer = new Timer(_ => RadioCheckTimeout(), null, timeout, 0);
+        }
+
+        protected void CancelCheckTimer()
+        {
+            if (CheckTimer != null)
+            {
+                CheckTimer.Cancel();
+            }
+            CheckTimer = null;
+        }
+
+        protected void RadioCheckTimeout()
+        {
+            if (IsScanning)
+            {
+#if DEBUG
+                Trace.Info("Performing Hard Radio Reset");
+#endif
+                _adapter.StopLeScan(this);
+                _adapter.Disable();
+                _adapter.Enable();
+                _adapter.StartLeScan(this);
             }
         }
 
