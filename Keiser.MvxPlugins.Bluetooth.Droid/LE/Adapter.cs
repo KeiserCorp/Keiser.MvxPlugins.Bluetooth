@@ -14,7 +14,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothAdapter _adapter;
 
         private const int RadioTimeout = 250;//15000;
-        private const int CheckTimeout = 7000;
+        private const int CheckTimeout = 30000;
+        private const int LongCheckTimeout = 120000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -86,6 +87,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Device basicDevice = new Device(device, rssi, scanRecord);
             Task.Run(() =>
                 {
+#if DEBUG
+                    Trace.Info("Scan Found Device: " + basicDevice.ID);
+#endif
                     _scanCallback.ScanCallback(basicDevice);
                     SetCheckTimer();
                 });
@@ -98,6 +102,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             StopScan();
             _scanCallback = scanCallback;
             ToggleRadio = toggleRadios;
+            SetCheckTimer();
             StartActualScan();
             IsScanning = true;
             Task.Run(() => DisableWifi());
@@ -111,7 +116,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             if (ToggleRadio)
             {
                 SetScanTimer();
-                SetCheckTimer();
             }
         }
 
@@ -127,6 +131,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         public void StopScan()
         {
             StopActualScan();
+            CancelCheckTimer();
             IsScanning = false;
             EnableWifi();
             Task.Run(() => ClearBluedroidCache());
@@ -135,7 +140,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         private void StopActualScan()
         {
             CancelScanTimer();
-            CancelCheckTimer();
             _adapter.StopLeScan(this);
         }
 
@@ -193,6 +197,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 _adapter.Disable();
                 _adapter.Enable();
                 _adapter.StartLeScan(this);
+                SetCheckTimer(LongCheckTimeout);
             }
         }
 
