@@ -13,9 +13,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothManager _manager;
         protected BluetoothAdapter _adapter;
 
-        private const int RadioTimeout = 250;//15000;
-        private const int CheckTimeout = 30000;
-        private const int LongCheckTimeout = 120000;
+        private const int RadioTimeout = 350;//15000;
+        private const int CheckTimeout = 15000;
+        private const int LongCheckTimeout = 60000;
 
         protected bool _leSupported = false;
         public bool LESupported { get { return _leSupported; } }
@@ -193,10 +193,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 #if DEBUG
                 Trace.Info("Performing Hard Radio Reset");
 #endif
+                CancelScanTimer();
                 _adapter.StopLeScan(this);
                 _adapter.Disable();
                 _adapter.Enable();
                 _adapter.StartLeScan(this);
+                SetScanTimer();
                 SetCheckTimer(LongCheckTimeout);
             }
         }
