@@ -13,7 +13,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothManager _manager;
         protected BluetoothAdapter _adapter;
 
-        private const int RadioTimeout = 350;//15000;
+        private const int RadioTimeout = 1700;//15000;
         private const int CheckTimeout = 15000;
         private const int LongCheckTimeout = 60000;
 
@@ -84,15 +84,25 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected IScanCallback _scanCallback;
         public void OnLeScan(BluetoothDevice device, int rssi, byte[] scanRecord)
         {
-            Device basicDevice = new Device(device, rssi, scanRecord);
-            Task.Run(() =>
+ /*           Task.Run(() =>
                 {
 #if DEBUG
-                    Trace.Info("Scan Found Device: " + basicDevice.ID);
+                    Trace.Info("Queued Scan Found Device: " + basicDevice.ID);
 #endif
                     _scanCallback.ScanCallback(basicDevice);
                     SetCheckTimer();
                 });
+  * */
+
+            Task.Factory.StartNew(() => {
+                Device basicDevice = new Device(device, rssi, scanRecord);
+#if DEBUG
+                Trace.Info("Queued Scan Found Device: " + basicDevice.ID);
+#endif
+                _scanCallback.ScanCallback(basicDevice);
+                SetCheckTimer();
+            }
+            , TaskCreationOptions.LongRunning); 
         }
 
         public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
