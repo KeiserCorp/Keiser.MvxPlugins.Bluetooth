@@ -49,7 +49,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 {
                     _manager = (BluetoothManager)_context.GetSystemService(Context.BluetoothService);
                     _adapter = _manager.Adapter;
-                    Task.Run(() => ClearBluedroidCache());
+                    ClearBluedroidCache();
+                    //Task.Run(() => ClearBluedroidCache());
                     GetWifi();
                 }
                 catch { }
@@ -84,17 +85,18 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected IScanCallback _scanCallback;
         public void OnLeScan(BluetoothDevice device, int rssi, byte[] scanRecord)
         {
- /*           Task.Run(() =>
-                {
-#if DEBUG
-                    Trace.Info("Queued Scan Found Device: " + basicDevice.ID);
-#endif
-                    _scanCallback.ScanCallback(basicDevice);
-                    SetCheckTimer();
-                });
-  * */
+            /*           Task.Run(() =>
+                           {
+           #if DEBUG
+                               Trace.Info("Queued Scan Found Device: " + basicDevice.ID);
+           #endif
+                               _scanCallback.ScanCallback(basicDevice);
+                               SetCheckTimer();
+                           });
+             * */
 
-            Task.Factory.StartNew(() => {
+            Task.Factory.StartNew(() =>
+            {
                 Device basicDevice = new Device(device, rssi, scanRecord);
 #if DEBUG
                 Trace.Info("Queued Scan Found Device: " + basicDevice.ID);
@@ -102,7 +104,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 _scanCallback.ScanCallback(basicDevice);
                 SetCheckTimer();
             }
-            , TaskCreationOptions.LongRunning); 
+            , TaskCreationOptions.LongRunning);
         }
 
         public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
@@ -144,7 +146,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             CancelCheckTimer();
             IsScanning = false;
             EnableWifi();
-            Task.Run(() => ClearBluedroidCache());
+            ClearBluedroidCache();
+            //Task.Run(() => ClearBluedroidCache());
         }
 
         private void StopActualScan()
@@ -184,7 +187,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             if (timeout == 0)
                 timeout = CheckTimeout;
             CancelCheckTimer();
-            CheckTimer = new Timer(_ => RadioCheckTimeout(), null, timeout, 0);
+            CheckTimer = new Timer(_ => RadioReload(), null, timeout, 0);
         }
 
         protected void CancelCheckTimer()
@@ -196,7 +199,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             CheckTimer = null;
         }
 
-        protected void RadioCheckTimeout()
+        protected void RadioReload()
         {
             if (IsScanning)
             {
@@ -206,7 +209,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 CancelScanTimer();
                 _adapter.StopLeScan(this);
                 _adapter.Disable();
+                while (_adapter.State != State.Off) { System.Threading.Thread.Sleep(10); }
                 _adapter.Enable();
+                while (_adapter.State != State.On) { System.Threading.Thread.Sleep(10); }
                 _adapter.StartLeScan(this);
                 SetScanTimer();
                 SetCheckTimer(LongCheckTimeout);
@@ -215,16 +220,19 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected void ClearBluedroidCache()
         {
+            Task.Factory.StartNew(() =>
+            {
 #if DEBUG
             Trace.Info("Clearing Bluedroid Cache");
 #endif
-            _adapter.StopLeScan(this);
-            _adapter.Disable();
-            RunSystemCommand("pm disable com.android.bluetooth");
-            RunSystemCommand("am force-stop com.android.bluetooth");
-            RunSystemCommand("rm -rf /data/misc/bluedroid/*");
-            RunSystemCommand("pm enable com.android.bluetooth");
-            _adapter.Enable();
+                _adapter.StopLeScan(this);
+                _adapter.Disable();
+                RunSystemCommand("pm disable com.android.bluetooth");
+                RunSystemCommand("am force-stop com.android.bluetooth");
+                RunSystemCommand("rm -rf /data/misc/bluedroid/*");
+                RunSystemCommand("pm enable com.android.bluetooth");
+                _adapter.Enable();
+            }, TaskCreationOptions.LongRunning);
         }
 
         private static void RunSystemCommand(string command)
