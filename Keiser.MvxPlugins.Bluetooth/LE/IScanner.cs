@@ -1,10 +1,10 @@
 ﻿namespace Keiser.MvxPlugins.Bluetooth.LE
 {
-    public interface IAdapter
+    public interface IScanner
     {
         bool LESupported { get; }
         bool IsScanning { get; }
-        void StartScan(IScanCallback scanCallback, bool toggleRadios = true);
+        void StartScan(IScanCallback scanCallback);
         void StopScan();
     }
 }

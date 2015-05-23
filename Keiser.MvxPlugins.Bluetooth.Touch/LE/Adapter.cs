@@ -6,7 +6,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Touch.LE
     using System.Threading;
     using System.Threading.Tasks;
 
-    public class Adapter : IAdapter
+    public class Adapter : IScanner
     {
         protected static CBCentralManager _central = new CBCentralManager(MonoTouch.CoreFoundation.DispatchQueue.DefaultGlobalQueue);
         protected static Adapter _adapter = new Adapter();
@@ -30,7 +30,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Touch.LE
         }
 
         protected IScanCallback _scanCallback;
-        public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
+        public void StartScan(IScanCallback scanCallback)
+        //public void StartScan(IScanCallback scanCallback, bool toggleRadios = true)
         {
             _scanCallback = scanCallback;
             AsyncStartScan();

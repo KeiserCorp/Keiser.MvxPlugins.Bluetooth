@@ -1,5 +1,7 @@
 namespace Keiser.MvxPlugins.Bluetooth.Droid
 {
+    using System;
+
     public static class Shell
     {
         public static void Command(string command)

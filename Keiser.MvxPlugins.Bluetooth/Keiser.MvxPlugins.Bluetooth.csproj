@@ -36,7 +36,7 @@
   <ItemGroup>
     <Compile Include="Address.cs" />
     <Compile Include="LE\DeviceBase.cs" />
-    <Compile Include="LE\IAdapter.cs" />
+    <Compile Include="LE\IScanner.cs" />
     <Compile Include="LE\IDevice.cs" />
     <Compile Include="LE\IScanCallback.cs" />
     <Compile Include="PluginLoader.cs" />
