@@ -25,8 +25,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected IScanCallback ScanCallback;
         protected CallbackQueuer CallbackQueuer;
-        //protected Bluetooth.Timer ScanPeriodTimer;
-        //protected const int ScanPeriod = 1700;
+        protected Bluetooth.Timer ScanPeriodTimer;
+        protected const int ScanPeriod = 27000;
 
         public void StartScan(IScanCallback scanCallback)
         {
@@ -64,30 +64,30 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             CallbackQueuer = new CallbackQueuer(ScanCallback, EmptyQueueEvent);
             CallbackQueuer.Start();
             StartAdapterScan();
-            //ScanTimerStart();
+            ScanTimerStart();
         }
 
         protected async void EndScan()
         {
-            //ScanTimerStop();
+            ScanTimerStop();
             StopAdapterScan();
             CallbackQueuer.Stop();
             await Adapter.Disable();
             Wifi.Enable();
         }
 
-        //protected void ScanTimerStart(int period = ScanPeriod)
-        //{
-        //    ScanTimerStop();
-        //    ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false), null, period, period);
-        //}
+        protected void ScanTimerStart(int period = ScanPeriod)
+        {
+            ScanTimerStop();
+            ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false), null, period, period);
+        }
 
-        //protected void ScanTimerStop()
-        //{
-        //    if (ScanPeriodTimer != null)
-        //        ScanPeriodTimer.Cancel();
-        //    ScanPeriodTimer = null;
-        //}
+        protected void ScanTimerStop()
+        {
+            if (ScanPeriodTimer != null)
+                ScanPeriodTimer.Cancel();
+            ScanPeriodTimer = null;
+        }
 
         protected void StartAdapterScan()
         {
