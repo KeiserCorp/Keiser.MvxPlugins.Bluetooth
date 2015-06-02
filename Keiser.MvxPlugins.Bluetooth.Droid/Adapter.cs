@@ -7,6 +7,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 
     public static class Adapter
     {
+        private const int StateCheckDelay = 500;
+
         private static Context _context;
         public static Context Context
         {
@@ -86,7 +88,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                 await Task.Run(async () =>
                 {
                     BluetoothAdapter.Enable();
-                    while (BluetoothAdapter.State != State.On) { await Task.Delay(50); }
+                    while (BluetoothAdapter.State != State.On) { await Task.Delay(StateCheckDelay); }
                 });
 #if DEBUG
                 Trace.Info("Bluetooth Adapter: Enabled");
@@ -101,7 +103,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                 await Task.Run(async () =>
                 {
                     BluetoothAdapter.Disable();
-                    while (BluetoothAdapter.State != State.Off) { await Task.Delay(50); }
+                    while (BluetoothAdapter.State != State.Off) { await Task.Delay(StateCheckDelay); }
                 });
 #if DEBUG
                 Trace.Info("Bluetooth Adapter: Disabled");
