@@ -23,18 +23,26 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             protected set { lock (_isScanningLocker) _isScanning = value; }
         }
 
-        private object _adapterRunTimeLocker = new object();
-        private DateTime _adapterRunTime;
-        public DateTime AdapterRunTime
+        private object _adapterLocker = new object();
+        private bool _adapterChanging = false;
+        public bool AdapterChanging
         {
-            get { lock (_adapterRunTimeLocker) return _adapterRunTime; }
-            protected set { lock (_adapterRunTimeLocker) _adapterRunTime = value; }
+            get { lock (_adapterLocker) return _adapterChanging; }
+            protected set { lock (_adapterLocker) _adapterChanging = value; }
         }
+
+        //private object _adapterRunTimeLocker = new object();
+        //private DateTime _adapterRunTime;
+        //public DateTime AdapterRunTime
+        //{
+        //    get { lock (_adapterRunTimeLocker) return _adapterRunTime; }
+        //    protected set { lock (_adapterRunTimeLocker) _adapterRunTime = value; }
+        //}
 
         protected IScanCallback ScanCallback;
         protected CallbackQueuer CallbackQueuer;
         protected Bluetooth.Timer ScanPeriodTimer;
-        protected const int ScanPeriod = 7000, ScanCycleLength = 45000;
+        //protected const int /*ScanPeriod = 7000,*/ ScanCycleLength = 45000;
 
         public void StartScan(IScanCallback scanCallback)
         {
@@ -66,44 +74,50 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected async void InitializeScan()
         {
+            while (AdapterChanging) { await Task.Delay(100); }
+            AdapterChanging = true;
             Wifi.Disable();
             await Adapter.ClearCache();
             await Adapter.Enable();
             CallbackQueuer = new CallbackQueuer(ScanCallback, EmptyQueueEvent);
             CallbackQueuer.Start();
             StartAdapterScan();
-            AdapterRunTime = DateTime.Now;
-            ScanTimerStart();
+            //AdapterRunTime = DateTime.Now;
+            //ScanTimerStart();
+            AdapterChanging = false;
         }
 
         protected async void EndScan()
         {
-            ScanTimerStop();
+            while (AdapterChanging) { await Task.Delay(100); }
+            AdapterChanging = true;
+            //ScanTimerStop();
             StopAdapterScan();
             CallbackQueuer.Stop();
             await Adapter.Disable();
             Wifi.Enable();
+            AdapterChanging = false;
         }
 
-        protected void ScanTimerStart(int period = ScanPeriod)
-        {
-            ScanTimerStop();
-                ScanPeriodTimer = new Bluetooth.Timer(_ => ScanTimerCallback(), null, period, period);
-        }
+        //protected void ScanTimerStart(int period = ScanPeriod)
+        //{
+        //    ScanTimerStop();
+        //        ScanPeriodTimer = new Bluetooth.Timer(_ => ScanTimerCallback(), null, period, period);
+        //}
 
-        protected void ScanTimerStop()
-        {
-            if (ScanPeriodTimer != null)
-                ScanPeriodTimer.Cancel();
-            ScanPeriodTimer = null;
-        }
+        //protected void ScanTimerStop()
+        //{
+        //    if (ScanPeriodTimer != null)
+        //        ScanPeriodTimer.Cancel();
+        //    ScanPeriodTimer = null;
+        //}
 
-        protected void ScanTimerCallback()
-        {
-            if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
-                ScanTimerStop();
-            CycleAdapterScan(false);
-        }
+        //protected void ScanTimerCallback()
+        //{
+        //    if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
+        //        ScanTimerStop();
+        //    CycleAdapterScan(false);
+        //}
 
         protected void StartAdapterScan()
         {
@@ -128,16 +142,19 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 #if DEBUG
             Trace.Info("LE Scanner: Empty Queue Event");
 #endif
-            if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
-            {
-                bool hardReset = (EmptyQueueTime != null && EmptyQueueTime >= DateTime.Now);
-                CycleAdapterScan(hardReset);
-                EmptyQueueTime = DateTime.Now.AddMilliseconds(CallbackQueuer.EmptyQueueThreshold + 1000);
-            }
+            //if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
+            //{
+            bool hardReset = (EmptyQueueTime != null && EmptyQueueTime >= DateTime.Now);
+            CycleAdapterScan(hardReset);
+            EmptyQueueTime = DateTime.Now.AddMilliseconds(CallbackQueuer.MaxEmptyQueueThreshold + 1000);
+            //}
         }
 
         protected async void CycleAdapterScan(bool hardCycle = false)
         {
+#if DEBUG
+            Trace.Info("LE Scanner: Cycling Adapter [Hard: " + hardCycle.ToString() + "]");
+#endif
             StopAdapterScan();
             if (hardCycle)
             {
