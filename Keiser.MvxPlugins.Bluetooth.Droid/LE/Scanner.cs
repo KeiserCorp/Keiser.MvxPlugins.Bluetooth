@@ -9,6 +9,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
     using Keiser.MvxPlugins.Bluetooth;
     using System.Collections.Concurrent;
     using System.Threading;
+    using Android.Bluetooth.LE;
+    using System.Collections.Generic;
 
     public class Scanner : Java.Lang.Object, IScanner, BluetoothAdapter.ILeScanCallback
     {
@@ -39,7 +41,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         //    protected set { lock (_adapterRunTimeLocker) _adapterRunTime = value; }
         //}
 
-        protected IScanCallback ScanCallback;
+        protected IScanCallback ExternalScanCallback;
         protected CallbackQueuer CallbackQueuer;
         protected Bluetooth.Timer ScanPeriodTimer;
         //protected const int /*ScanPeriod = 7000,*/ ScanCycleLength = 45000;
@@ -52,7 +54,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Trace.Info("LE Scanner: Starting");
 #endif
             IsScanning = true;
-            ScanCallback = scanCallback;
+            ExternalScanCallback = scanCallback;
             InitializeScan();
         }
 
@@ -79,7 +81,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             Wifi.Disable();
             await Adapter.ClearCache();
             await Adapter.Enable();
-            CallbackQueuer = new CallbackQueuer(ScanCallback, EmptyQueueEvent);
+            CallbackQueuer = new CallbackQueuer(ExternalScanCallback, EmptyQueueEvent);
             CallbackQueuer.Start();
             StartAdapterScan();
             //AdapterRunTime = DateTime.Now;
@@ -119,14 +121,36 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         //    CycleAdapterScan(false);
         //}
 
+        protected BluetoothLeScanner LEScanner;
+        protected ScanCallback LEScanCallback;
+
         protected void StartAdapterScan()
         {
-            Adapter.BluetoothAdapter.StartLeScan(this);
+            if (((int)Android.OS.Build.VERSION.SdkInt) >= 21)
+            {
+                LEScanCallback = new ScanCallback(CallbackQueuer);
+                LEScanner = Adapter.BluetoothAdapter.BluetoothLeScanner;
+                ScanSettings settings = new ScanSettings.Builder().SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency).Build();
+                ScanFilter nameFilter = new ScanFilter.Builder().SetDeviceName("M3").Build();
+                List<ScanFilter> filters = new List<ScanFilter>() { nameFilter };
+                LEScanner.StartScan(filters, settings, LEScanCallback);
+            }
+            else
+            {
+                Adapter.BluetoothAdapter.StartLeScan(this);
+            }
         }
 
         protected void StopAdapterScan()
         {
-            Adapter.BluetoothAdapter.StopLeScan(this);
+            if (((int)Android.OS.Build.VERSION.SdkInt) >= 21)
+            {
+                LEScanner.StopScan(LEScanCallback);
+            }
+            else
+            {
+                Adapter.BluetoothAdapter.StopLeScan(this);
+            }
         }
 
         private object _emptyQueueTimeLocker = new object();
