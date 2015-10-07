@@ -15,7 +15,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
     public class Scanner : Java.Lang.Object, IScanner, BluetoothAdapter.ILeScanCallback
     {
         public bool LESupported { get { return Adapter.LESupported; } }
-        //public void ClearCache() { Adapter.ClearCache(); }
 
         private object _isScanningLocker = new object();
         private bool _isScanning = false;
@@ -33,18 +32,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             protected set { lock (_adapterLocker) _adapterChanging = value; }
         }
 
-        //private object _adapterRunTimeLocker = new object();
-        //private DateTime _adapterRunTime;
-        //public DateTime AdapterRunTime
-        //{
-        //    get { lock (_adapterRunTimeLocker) return _adapterRunTime; }
-        //    protected set { lock (_adapterRunTimeLocker) _adapterRunTime = value; }
-        //}
-
         protected IScanCallback ExternalScanCallback;
         protected CallbackQueuer CallbackQueuer;
         protected Bluetooth.Timer ScanPeriodTimer;
-        //protected const int /*ScanPeriod = 7000,*/ ScanCycleLength = 45000;
 
         public void StartScan(IScanCallback scanCallback)
         {
@@ -84,8 +74,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             CallbackQueuer = new CallbackQueuer(ExternalScanCallback, EmptyQueueEvent);
             CallbackQueuer.Start();
             StartAdapterScan();
-            //AdapterRunTime = DateTime.Now;
-            //ScanTimerStart();
             AdapterChanging = false;
         }
 
@@ -93,33 +81,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         {
             while (AdapterChanging) { await Task.Delay(100); }
             AdapterChanging = true;
-            //ScanTimerStop();
             StopAdapterScan();
             CallbackQueuer.Stop();
             await Adapter.Disable();
             Wifi.Enable();
             AdapterChanging = false;
         }
-
-        //protected void ScanTimerStart(int period = ScanPeriod)
-        //{
-        //    ScanTimerStop();
-        //        ScanPeriodTimer = new Bluetooth.Timer(_ => ScanTimerCallback(), null, period, period);
-        //}
-
-        //protected void ScanTimerStop()
-        //{
-        //    if (ScanPeriodTimer != null)
-        //        ScanPeriodTimer.Cancel();
-        //    ScanPeriodTimer = null;
-        //}
-
-        //protected void ScanTimerCallback()
-        //{
-        //    if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
-        //        ScanTimerStop();
-        //    CycleAdapterScan(false);
-        //}
 
         protected BluetoothLeScanner LEScanner;
         protected ScanCallback LEScanCallback;
@@ -131,8 +98,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
                 LEScanCallback = new ScanCallback(CallbackQueuer);
                 LEScanner = Adapter.BluetoothAdapter.BluetoothLeScanner;
                 ScanSettings settings = new ScanSettings.Builder().SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency).Build();
-                ScanFilter nameFilter = new ScanFilter.Builder().SetDeviceName("M3").Build();
-                List<ScanFilter> filters = new List<ScanFilter>() { nameFilter };
+                //ScanFilter nameFilter = new ScanFilter.Builder().SetDeviceName("M3").Build();
+                List<ScanFilter> filters = new List<ScanFilter>() { /*nameFilter*/ };
                 LEScanner.StartScan(filters, settings, LEScanCallback);
             }
             else
@@ -166,12 +133,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 #if DEBUG
             Trace.Info("LE Scanner: Empty Queue Event");
 #endif
-            //if (AdapterRunTime.AddMilliseconds(ScanCycleLength) <= DateTime.Now)
-            //{
             bool hardReset = (EmptyQueueTime != null && EmptyQueueTime >= DateTime.Now);
             CycleAdapterScan(hardReset);
             EmptyQueueTime = DateTime.Now.AddMilliseconds(CallbackQueuer.MaxEmptyQueueThreshold + 1000);
-            //}
         }
 
         protected async void CycleAdapterScan(bool hardCycle = false)
