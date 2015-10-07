@@ -34,7 +34,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected IScanCallback ExternalScanCallback;
         protected CallbackQueuer CallbackQueuer;
-        protected Bluetooth.Timer ScanPeriodTimer;
 
         public void StartScan(IScanCallback scanCallback)
         {
@@ -105,6 +104,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             else
             {
                 Adapter.BluetoothAdapter.StartLeScan(this);
+                ScanTimerStart();
             }
         }
 
@@ -116,8 +116,25 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
             else
             {
+                ScanTimerStop();
                 Adapter.BluetoothAdapter.StopLeScan(this);
             }
+        }
+
+        protected Bluetooth.Timer ScanPeriodTimer;
+        protected const int ScanPeriod = 20000, ScanPause = 1000;
+
+        protected void ScanTimerStart(int period = ScanPeriod)
+        {
+            ScanTimerStop();
+            ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false, ScanPause), null, period, period);
+        }
+
+        protected void ScanTimerStop()
+        {
+            if (ScanPeriodTimer != null)
+                ScanPeriodTimer.Cancel();
+            ScanPeriodTimer = null;
         }
 
         private object _emptyQueueTimeLocker = new object();
@@ -138,7 +155,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             EmptyQueueTime = DateTime.Now.AddMilliseconds(CallbackQueuer.MaxEmptyQueueThreshold + 1000);
         }
 
-        protected async void CycleAdapterScan(bool hardCycle = false)
+        protected async void CycleAdapterScan(bool hardCycle = false, int scanPause = 0)
         {
 #if DEBUG
             Trace.Info("LE Scanner: Cycling Adapter [Hard: " + hardCycle.ToString() + "]");
@@ -148,6 +165,10 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             {
                 await Adapter.Disable();
                 await Adapter.Enable();
+            }
+            else if (scanPause > 0)
+            {
+                await Task.Delay(scanPause);
             }
             StartAdapterScan();
         }
