@@ -32,8 +32,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             protected set { lock (_adapterLocker) _adapterChanging = value; }
         }
 
+        protected bool isLollipop = false;
+
         protected IScanCallback ExternalScanCallback;
         protected CallbackQueuer CallbackQueuer;
+
+        public Scanner()
+        {
+            isLollipop = ((int)Android.OS.Build.VERSION.SdkInt) >= 21;
+        }
 
         public void StartScan(IScanCallback scanCallback)
         {
@@ -90,15 +97,18 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothLeScanner LEScanner;
         protected ScanCallback LEScanCallback;
 
+        protected Bluetooth.Timer ScanPeriodTimer;
+        //protected const int ScanPeriod = 20000, ScanPause = 1000;
+        protected const int ScanPeriod = 4000, ScanPause = 500;
+
         protected void StartAdapterScan()
         {
-            if (((int)Android.OS.Build.VERSION.SdkInt) >= 21)
+            if (isLollipop)
             {
                 LEScanCallback = new ScanCallback(CallbackQueuer);
                 LEScanner = Adapter.BluetoothAdapter.BluetoothLeScanner;
                 ScanSettings settings = new ScanSettings.Builder().SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency).Build();
-                //ScanFilter nameFilter = new ScanFilter.Builder().SetDeviceName("M3").Build();
-                List<ScanFilter> filters = new List<ScanFilter>() { /*nameFilter*/ };
+                List<ScanFilter> filters = new List<ScanFilter>() { };
                 LEScanner.StartScan(filters, settings, LEScanCallback);
             }
             else
@@ -110,7 +120,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         protected void StopAdapterScan()
         {
-            if (((int)Android.OS.Build.VERSION.SdkInt) >= 21)
+            if (isLollipop)
             {
                 LEScanner.StopScan(LEScanCallback);
             }
@@ -121,13 +131,10 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
         }
 
-        protected Bluetooth.Timer ScanPeriodTimer;
-        protected const int ScanPeriod = 20000, ScanPause = 1000;
-
-        protected void ScanTimerStart(int period = ScanPeriod)
+        protected void ScanTimerStart(int period = ScanPeriod, int pause = ScanPause)
         {
             ScanTimerStop();
-            ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false, ScanPause), null, period, period);
+            ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false, pause), null, period, period);
         }
 
         protected void ScanTimerStop()
