@@ -7,7 +7,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 
     public static class Adapter
     {
-        private const int StateCheckDelay = 500;
+        private const int StateCheckDelay = 100;
 
         private static Context _context;
         public static Context Context

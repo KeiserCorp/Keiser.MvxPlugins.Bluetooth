@@ -13,9 +13,11 @@
         protected ConcurrentQueue<IDevice> CallbackQueue = new ConcurrentQueue<IDevice>();
         protected CancellationTokenSource CallbackQueueCancellationTokenSource;
         protected Task CallbackQueueTask;
-        public const int EmptyQueueThreshold = 1500, MaxEmptyQueueThreshold = 5000;
+        public const int EmptyQueueThreshold = 4100, MaxEmptyQueueThreshold = 15000;
         protected event EventHandler EmptyQueueThresholdEvent;
         protected Bluetooth.Timer EmptyQueueTimer;
+
+        private volatile bool EmptyQueueRunning = false;
 
         public CallbackQueuer(IScanCallback scanCallback, EventHandler emptyQueueEvent)
         {
@@ -35,15 +37,28 @@
                 () => CallbackQueueAction(CallbackQueueCancellationTokenSource.Token),
                 TaskCreationOptions.LongRunning
             );
+            EmptyQueueRunning = true;
             CallbackQueueTask.Start();
+            EmptyQueueTimerReset();
+        }
+
+        public void Pause()
+        {
+            EmptyQueueRunning = false;
+            EmptyQueueTimerStop();
+        }
+
+        public void Resume()
+        {
+            EmptyQueueRunning = true;
             EmptyQueueTimerReset();
         }
 
         public void Stop()
         {
+            EmptyQueueRunning = false;
             EmptyQueueTimerStop();
             CallbackQueueCancellationTokenSource.Cancel();
-            EmptyQueueTimerStop();
         }
 
         protected async void CallbackQueueAction(CancellationToken cancelToken)
@@ -80,7 +95,8 @@
         protected void EmptyQueueTimerReset(int threshold = EmptyQueueThreshold)
         {
             EmptyQueueTimerStop();
-            EmptyQueueTimer = new Bluetooth.Timer(_ => EmptyQueueTimeout(), null, threshold, 0);
+            if (EmptyQueueRunning)
+                EmptyQueueTimer = new Bluetooth.Timer(_ => EmptyQueueTimeout(), null, threshold, 0);
         }
 
         protected void EmptyQueueTimerStop()
@@ -91,7 +107,7 @@
 
         protected void EmptyQueueTimeout()
         {
-            if (EmptyQueueThresholdEvent != null)
+            if (EmptyQueueThresholdEvent != null && EmptyQueueRunning)
                 EmptyQueueThresholdEvent.Invoke(null, null);
             EmptyQueueTimerReset(MaxEmptyQueueThreshold);
         }

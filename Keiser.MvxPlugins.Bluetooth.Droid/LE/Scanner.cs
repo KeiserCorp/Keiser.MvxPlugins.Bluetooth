@@ -125,22 +125,14 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
         }
 
-        private object _emptyQueueTimeLocker = new object();
-        private DateTime _emptyQueueTime;
-        public DateTime EmptyQueueTime
-        {
-            get { lock (_emptyQueueTimeLocker) return _emptyQueueTime; }
-            protected set { lock (_emptyQueueTimeLocker) _emptyQueueTime = value; }
-        }
-
         protected void EmptyQueueEvent(object sender, EventArgs e)
         {
 #if DEBUG
             Trace.Info("LE Scanner: Empty Queue Event");
 #endif
-            bool hardReset = (EmptyQueueTime != null && EmptyQueueTime >= DateTime.Now);
-            CycleAdapterScan(hardReset);
-            EmptyQueueTime = DateTime.Now.AddMilliseconds(CallbackQueuer.MaxEmptyQueueThreshold + 1000);
+            CallbackQueuer.Pause();
+            CycleAdapterScan(true);
+            CallbackQueuer.Resume();
         }
 
         protected async void CycleAdapterScan(bool hardCycle = false, int scanPause = 0)
