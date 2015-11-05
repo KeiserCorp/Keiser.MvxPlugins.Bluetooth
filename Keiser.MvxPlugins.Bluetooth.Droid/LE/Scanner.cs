@@ -97,10 +97,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
         protected BluetoothLeScanner LEScanner;
         protected ScanCallback LEScanCallback;
 
-        protected Bluetooth.Timer ScanPeriodTimer;
-        //protected const int ScanPeriod = 20000, ScanPause = 1000;
-        protected const int ScanPeriod = 4000, ScanPause = 500;
-
         protected void StartAdapterScan()
         {
             if (isLollipop)
@@ -114,7 +110,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             else
             {
                 Adapter.BluetoothAdapter.StartLeScan(this);
-                ScanTimerStart();
             }
         }
 
@@ -126,22 +121,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             }
             else
             {
-                ScanTimerStop();
                 Adapter.BluetoothAdapter.StopLeScan(this);
             }
-        }
-
-        protected void ScanTimerStart(int period = ScanPeriod, int pause = ScanPause)
-        {
-            ScanTimerStop();
-            ScanPeriodTimer = new Bluetooth.Timer(_ => CycleAdapterScan(false, pause), null, period, period);
-        }
-
-        protected void ScanTimerStop()
-        {
-            if (ScanPeriodTimer != null)
-                ScanPeriodTimer.Cancel();
-            ScanPeriodTimer = null;
         }
 
         private object _emptyQueueTimeLocker = new object();

@@ -13,7 +13,7 @@
         protected ConcurrentQueue<IDevice> CallbackQueue = new ConcurrentQueue<IDevice>();
         protected CancellationTokenSource CallbackQueueCancellationTokenSource;
         protected Task CallbackQueueTask;
-        public const int EmptyQueueThreshold = 15000, MaxEmptyQueueThreshold = 30000;
+        public const int EmptyQueueThreshold = 1500, MaxEmptyQueueThreshold = 5000;
         protected event EventHandler EmptyQueueThresholdEvent;
         protected Bluetooth.Timer EmptyQueueTimer;
 
