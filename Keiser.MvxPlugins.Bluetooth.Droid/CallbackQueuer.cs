@@ -2,7 +2,6 @@
 {
     using Keiser.MvxPlugins.Bluetooth;
     using Keiser.MvxPlugins.Bluetooth.LE;
-    using System;
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,16 +12,12 @@
         protected ConcurrentQueue<IDevice> CallbackQueue = new ConcurrentQueue<IDevice>();
         protected CancellationTokenSource CallbackQueueCancellationTokenSource;
         protected Task CallbackQueueTask;
-        public const int EmptyQueueThreshold = 4100, MaxEmptyQueueThreshold = 15000;
-        protected event EventHandler EmptyQueueThresholdEvent;
-        protected Bluetooth.Timer EmptyQueueTimer;
 
-        private volatile bool EmptyQueueRunning = false;
-
-        public CallbackQueuer(IScanCallback scanCallback, EventHandler emptyQueueEvent)
+        public CallbackQueuer()
         {
-            ScanCallback = scanCallback;
-            EmptyQueueThresholdEvent += emptyQueueEvent;
+#if DEBUG
+            Trace.Info("CallbackQueuer: Constructed");
+#endif
         }
 
         public void Push(IDevice device)
@@ -30,34 +25,19 @@
             CallbackQueue.Enqueue(device);
         }
 
-        public void Start()
+        public void Start(IScanCallback scanCallback)
         {
+            ScanCallback = scanCallback;
             CallbackQueueCancellationTokenSource = new CancellationTokenSource();
             CallbackQueueTask = new Task(
                 () => CallbackQueueAction(CallbackQueueCancellationTokenSource.Token),
                 TaskCreationOptions.LongRunning
             );
-            EmptyQueueRunning = true;
             CallbackQueueTask.Start();
-            EmptyQueueTimerReset();
-        }
-
-        public void Pause()
-        {
-            EmptyQueueRunning = false;
-            EmptyQueueTimerStop();
-        }
-
-        public void Resume()
-        {
-            EmptyQueueRunning = true;
-            EmptyQueueTimerReset();
         }
 
         public void Stop()
         {
-            EmptyQueueRunning = false;
-            EmptyQueueTimerStop();
             CallbackQueueCancellationTokenSource.Cancel();
         }
 
@@ -73,9 +53,11 @@
                     IDevice device;
                     while (CallbackQueue.TryDequeue(out device))
                     {
+#if DEBUG
+                        Trace.Info("Device Found: " + device.Name + " " + device.ID.ColonSeperated);
+#endif
                         ScanCallback.ScanCallback(device);
                     }
-                    EmptyQueueTimerReset();
                 }
                 await Task.Delay(100);
             }
@@ -90,26 +72,6 @@
             IDevice device;
             while (!CallbackQueue.IsEmpty)
                 while (CallbackQueue.TryDequeue(out device)) { }
-        }
-
-        protected void EmptyQueueTimerReset(int threshold = EmptyQueueThreshold)
-        {
-            EmptyQueueTimerStop();
-            if (EmptyQueueRunning)
-                EmptyQueueTimer = new Bluetooth.Timer(_ => EmptyQueueTimeout(), null, threshold, 0);
-        }
-
-        protected void EmptyQueueTimerStop()
-        {
-            if (EmptyQueueTimer != null)
-                EmptyQueueTimer.Cancel();
-        }
-
-        protected void EmptyQueueTimeout()
-        {
-            if (EmptyQueueThresholdEvent != null && EmptyQueueRunning)
-                EmptyQueueThresholdEvent.Invoke(null, null);
-            EmptyQueueTimerReset(MaxEmptyQueueThreshold);
         }
     }
 }

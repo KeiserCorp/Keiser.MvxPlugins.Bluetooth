@@ -22,5 +22,14 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         {
             WifiManager.SetWifiEnabled(false);
         }
+
+        public static bool IsEnabled
+        {
+            get
+            {
+                var state = WifiManager.WifiState;
+                return (state == Android.Net.WifiState.Enabled);
+            }
+        }
     }
 }
