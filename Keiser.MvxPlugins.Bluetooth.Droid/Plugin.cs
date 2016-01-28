@@ -11,7 +11,7 @@
         public void Load()
         {
             Mvx.RegisterType<IDevice, Device>();
-            Mvx.RegisterType<IScanner, SmartScanner>();
+            Mvx.RegisterType<IScanner, Scanner>();
         }
     }
 }

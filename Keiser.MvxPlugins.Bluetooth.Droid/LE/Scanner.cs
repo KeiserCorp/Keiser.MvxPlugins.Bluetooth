@@ -3,9 +3,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
     using Keiser.MvxPlugins.Bluetooth;
     using Keiser.MvxPlugins.Bluetooth.LE;
 
-    public class SmartScanner : Java.Lang.Object, IScanner
+    public class Scanner : Java.Lang.Object, IScanner
     {
-        public bool LESupported { get { return SmartAdapter.LESupported; } }
+        public bool LESupported { get { return Adapter.LESupported; } }
 
         private object _isScanningLocker = new object();
         private bool _isScanning = false;
@@ -15,41 +15,36 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
             protected set { lock (_isScanningLocker) _isScanning = value; }
         }
 
-        protected SmartAdapter SmartAdapter;
+        protected Adapter Adapter;
         protected CallbackQueuer CallbackQueuer;
-        //protected SmartScanCallback SmartScanCallback;
 
-        public SmartScanner()
+        public Scanner()
         {
-            SmartAdapter = new SmartAdapter();
+            Adapter = new Adapter();
             CallbackQueuer = new CallbackQueuer();
-            //SmartScanCallback = new SmartScanCallback(CallbackQueuer);
-#if DEBUG
-            Trace.Info("LE Scanner: Constructed");
-#endif
         }
 
         public void StartScan(IScanCallback scanCallback)
         {
-            if (!SmartAdapter.LESupported)
+            if (!Adapter.LESupported)
                 return;
 #if DEBUG
             Trace.Info("LE Scanner: Starting");
 #endif
             IsScanning = true;
             CallbackQueuer.Start(scanCallback);
-            SmartAdapter.StartLEScan(new SmartScanCallback(CallbackQueuer));
+            Adapter.StartLEScan(CallbackQueuer);
         }
 
         public void StopScan()
         {
-            if (!SmartAdapter.LESupported)
+            if (!Adapter.LESupported)
                 return;
 #if DEBUG
             Trace.Info("LE Scanner: Stopping");
 #endif
             CallbackQueuer.Stop();
-            SmartAdapter.StopLEScan();
+            Adapter.StopLEScan();
             IsScanning = false;
         }
     }

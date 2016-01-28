@@ -5,8 +5,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
     using Android.Content;
     using Keiser.MvxPlugins.Bluetooth.Droid.LE;
     using System.Collections.Generic;
+    using System.Threading;
 
-    public class SmartAdapter : BroadcastReceiver
+    public class Adapter : BroadcastReceiver
     {
         private Context _context;
         public Context Context
@@ -44,7 +45,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         {
             get
             {
-                return true;
                 lock (_leSupportedLocker)
                 {
                     if (!_leSupportedSet)
@@ -52,9 +52,6 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                         _leSupportedSet = true;
                         _leSupported = Context.PackageManager.HasSystemFeature(Android.Content.PM.PackageManager.FeatureBluetoothLe);
                     }
-#if DEBUG
-                    Trace.Info("LE Supported: " + _leSupported);
-#endif
                     return _leSupported;
                 }
             }
@@ -82,14 +79,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         protected volatile bool AutoEnable = false;
         protected volatile bool AutoClearCache = false;
 
-        protected const int AdapterEnableTimeout = 1000;
+        protected const int AdapterEnableTimeout = 6000;
+        protected Bluetooth.Timer AdapterEnableTimer;
 
-        public SmartAdapter()
+        public Adapter()
         {
             Register();
-#if DEBUG
-            Trace.Info("Smart Adapter: Constructed");
-#endif
         }
 
         protected override void Dispose(bool disposing)
@@ -116,7 +111,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             switch (state)
             {
                 case BluetoothAdapter.Error:
-                    Error();
+                    Error("Change State Error");
                     break;
                 case 12: // STATE_ON
                     Enabled();
@@ -127,16 +122,21 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
         }
 
-        protected void Error()
+        protected void Error(string message = "Unknown")
         {
-#if DEBUG
-            Trace.Info("Bluetooth Adapter: Error");
-#endif
+            Trace.Error("Bluetooth Adapter: Error[ " + message + " ]");
+            if (AdapterEnableTimer != null)
+            {
+                AdapterEnableTimer.Cancel();
+            }
             Cycle();
         }
 
         protected void Enable()
         {
+#if DEBUG
+            Trace.Info("Bluetooth Adapter: Enable Issued");
+#endif
             if (Wifi.IsEnabled)
             {
                 Wifi.Disable();
@@ -145,20 +145,30 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             {
                 Enabled();
             }
-            else if (!BluetoothAdapter.Enable())
+            else
             {
-                Error();
+                if (BluetoothAdapter.Enable())
+                {
+                    AdapterEnableTimer = new Bluetooth.Timer(_ => Error("Failed To Enable"), null, AdapterEnableTimeout, Timeout.Infinite); ;
+                }
+                else
+                {
+                    Error("Enable Error");
+                }
             }
         }
 
         protected bool IsEnabled { get { return (BluetoothAdapter.State == State.On); } }
-
 
         protected void Enabled()
         {
 #if DEBUG
             Trace.Info("Bluetooth Adapter: Enabled");
 #endif
+            if (AdapterEnableTimer != null)
+            {
+                AdapterEnableTimer.Cancel();
+            }
             if (AutoScan)
             {
                 StartAdapterScan();
@@ -167,13 +177,16 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 
         protected void Disable()
         {
+#if DEBUG
+            Trace.Info("Bluetooth Adapter: Disable Issued");
+#endif
             if (!IsEnabled)
             {
                 Disabled();
             }
             else if (!BluetoothAdapter.Disable())
             {
-                Error();
+                Error("Disable Error");
             }
         }
 
@@ -200,13 +213,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             Disable();
         }
 
-        protected SmartScanCallback ScanCallback;
-        public void StartLEScan(SmartScanCallback scanCallback)
+        protected CallbackQueuer CallbackQueuer;
+        protected ClassicScanCallback ClassicScanCallback;
+        protected LEScanCallback LEScanCallback;
+        public void StartLEScan(CallbackQueuer callbackQueuer)
         {
 #if DEBUG
             Trace.Info("LE Scanner: Start Issued");
 #endif
-            ScanCallback = scanCallback;
+            CallbackQueuer = callbackQueuer;
             AutoScan = true;
             if (!IsEnabled)
             {
@@ -222,13 +237,18 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         {
             if (IsLollipop)
             {
-                //ScanSettings settings = new ScanSettings.Builder().SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency).Build();
-                //List<ScanFilter> filters = new List<ScanFilter>() { };
-                //BluetoothAdapter.BluetoothLeScanner.StartScan(filters, settings, ScanCallback);
+                LEScanCallback = new LEScanCallback(CallbackQueuer);
+                ScanSettings settings = new ScanSettings.Builder().SetScanMode(Android.Bluetooth.LE.ScanMode.LowLatency).Build();
+                List<ScanFilter> filters = new List<ScanFilter>() { };
+                BluetoothAdapter.BluetoothLeScanner.StartScan(filters, settings, LEScanCallback);
             }
             else
             {
-                BluetoothAdapter.StartLeScan(ScanCallback);
+                ClassicScanCallback = new ClassicScanCallback(CallbackQueuer);
+                if (!BluetoothAdapter.StartLeScan(ClassicScanCallback))
+                {
+                    Error("Start LE Scan Error");
+                }
             }
 #if DEBUG
             Trace.Info("LE Scanner: Starting");
@@ -250,11 +270,11 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         {
             if (IsLollipop)
             {
-                BluetoothAdapter.BluetoothLeScanner.StopScan(ScanCallback);
+                BluetoothAdapter.BluetoothLeScanner.StopScan(LEScanCallback);
             }
             else
             {
-                BluetoothAdapter.StopLeScan(ScanCallback);
+                BluetoothAdapter.StopLeScan(ClassicScanCallback);
             }
 #if DEBUG
             Trace.Info("LE Scanner: Stopping");

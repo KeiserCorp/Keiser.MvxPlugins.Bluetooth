@@ -60,8 +60,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LE\SmartScanner.cs" />
-    <Compile Include="LE\SmartScanCallback.cs" />
+    <Compile Include="LE\ClassicScanCallback.cs" />
+    <Compile Include="LE\Scanner.cs" />
+    <Compile Include="LE\LEScanCallback.cs" />
     <Compile Include="SmartAdapter.cs" />
     <Compile Include="CallbackQueuer.cs" />
     <Compile Include="LE\Device.cs" />
