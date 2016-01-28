@@ -1,13 +1,16 @@
 namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 {
+    using Android.Bluetooth;
     using Android.Bluetooth.LE;
+    using Keiser.MvxPlugins.Bluetooth.LE;
     using System.Collections.Generic;
 
-    public class ScanCallback : Android.Bluetooth.LE.ScanCallback
+    public class LEScanCallback : Android.Bluetooth.LE.ScanCallback, IScanCallback
     {
         protected CallbackQueuer CallbackQueuer;
 
-        public ScanCallback(CallbackQueuer callbackQueuer)
+        public LEScanCallback(CallbackQueuer callbackQueuer)
+            : base()
         {
             CallbackQueuer = callbackQueuer;
         }
@@ -28,10 +31,13 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid.LE
 
         public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
         {
-#if DEBUG
-            Trace.Info("OnScan Result: " + result.Device.Address);
-#endif
             CallbackQueuer.Push(new Device(result.Device, result.Rssi, result.ScanRecord.GetBytes()));
         }
+
+        public void ScanCallback(IDevice device)
+        {
+            CallbackQueuer.Push(device);
+        }
+
     }
 }

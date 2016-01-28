@@ -60,10 +60,11 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Adapter.cs" />
-    <Compile Include="CallbackQueuer.cs" />
-    <Compile Include="LE\ScanCallback.cs" />
+    <Compile Include="LE\ClassicScanCallback.cs" />
     <Compile Include="LE\Scanner.cs" />
+    <Compile Include="LE\LEScanCallback.cs" />
+    <Compile Include="SmartAdapter.cs" />
+    <Compile Include="CallbackQueuer.cs" />
     <Compile Include="LE\Device.cs" />
     <Compile Include="Wifi.cs" />
     <Compile Include="Plugin.cs" />

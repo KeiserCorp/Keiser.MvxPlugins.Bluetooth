@@ -1,1 +1,1 @@
-..\..\nuget push Keiser.MvxPlugins.Bluetooth.1.4.2.nupkg
+..\..\nuget push Keiser.MvxPlugins.Bluetooth.1.5.1.nupkg
