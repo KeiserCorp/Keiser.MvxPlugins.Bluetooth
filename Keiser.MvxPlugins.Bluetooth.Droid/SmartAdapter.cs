@@ -230,7 +230,36 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             else
             {
                 StartAdapterScan();
+                ClassicScanCallback = new ClassicScanCallback(CallbackQueuer);
             }
+        }
+
+        protected Bluetooth.Timer MonitorRadioTimer;
+        protected void MonitorRadio(bool initial = false)
+        {
+            bool activity = CallbackQueuer.ActivitySinceLastCheck;
+#if DEBUG
+            Trace.Info("Monitoring Activity: " + activity);
+#endif
+            if (!activity)
+            {
+                StopAdapterScan();
+                StartAdapterScan();
+            }
+            StartMonitorRadio(!activity);
+        }
+
+        protected void StartMonitorRadio(bool delay = false)
+        {
+            int timeout = (delay) ? 120000 : 15000;
+            if (MonitorRadioTimer != null)
+            { MonitorRadioTimer.Cancel(); }
+            MonitorRadioTimer = new Bluetooth.Timer(_ => MonitorRadio(), null, timeout, Timeout.Infinite);
+        }
+
+        protected void StopMonitorRadio()
+        {
+            MonitorRadioTimer.Cancel();
         }
 
         protected void StartAdapterScan()
@@ -244,11 +273,11 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
             else
             {
-                ClassicScanCallback = new ClassicScanCallback(CallbackQueuer);
                 if (!BluetoothAdapter.StartLeScan(ClassicScanCallback))
                 {
                     Error("Start LE Scan Error");
                 }
+                else { StartMonitorRadio(); }
             }
 #if DEBUG
             Trace.Info("LE Scanner: Starting");
@@ -275,6 +304,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             else
             {
                 BluetoothAdapter.StopLeScan(ClassicScanCallback);
+                StopMonitorRadio();
             }
 #if DEBUG
             Trace.Info("LE Scanner: Stopping");

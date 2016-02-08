@@ -13,6 +13,17 @@
         protected CancellationTokenSource CallbackQueueCancellationTokenSource;
         protected Task CallbackQueueTask;
 
+        protected volatile bool Activity;
+        public bool ActivitySinceLastCheck
+        {
+            get
+            {
+                bool activity = Activity;
+                Activity = false;
+                return activity;
+            }
+        }
+
         public CallbackQueuer()
         {
 #if DEBUG
@@ -50,6 +61,7 @@
             {
                 if (!CallbackQueue.IsEmpty)
                 {
+                    Activity = true;
                     IDevice device;
                     while (CallbackQueue.TryDequeue(out device))
                     {
