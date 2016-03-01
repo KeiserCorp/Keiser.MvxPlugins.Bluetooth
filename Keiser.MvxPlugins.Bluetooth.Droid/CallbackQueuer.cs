@@ -13,13 +13,13 @@
         protected CancellationTokenSource CallbackQueueCancellationTokenSource;
         protected Task CallbackQueueTask;
 
-        protected volatile bool Activity;
-        public bool ActivitySinceLastCheck
+        protected volatile int Activity = 0;
+        public int ActivitySinceLastCheck
         {
             get
             {
-                bool activity = Activity;
-                Activity = false;
+                int activity = Activity;
+                Activity = 0;
                 return activity;
             }
         }
@@ -61,12 +61,12 @@
             {
                 if (!CallbackQueue.IsEmpty)
                 {
-                    Activity = true;
                     IDevice device;
                     while (CallbackQueue.TryDequeue(out device))
                     {
+                        Activity++;
 #if DEBUG
-                        Trace.Info("Device Found: " + device.Name + " " + device.ID.ColonSeperated);
+                        //Trace.Info("Device Found: " + device.Name + " " + device.ID.ColonSeperated);
 #endif
                         ScanCallback.ScanCallback(device);
                     }

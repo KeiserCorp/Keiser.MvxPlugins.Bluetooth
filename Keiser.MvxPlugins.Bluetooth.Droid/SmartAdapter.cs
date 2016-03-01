@@ -4,6 +4,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
     using Android.Bluetooth.LE;
     using Android.Content;
     using Keiser.MvxPlugins.Bluetooth.Droid.LE;
+    using System;
     using System.Collections.Generic;
     using System.Threading;
 
@@ -122,14 +123,17 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
         }
 
-        protected void Error(string message = "Unknown")
+        protected bool SuccessfullyRecovered = true;
+        protected void Error(string message = "Unknown", bool hard = false)
         {
+            bool recovered = SuccessfullyRecovered;
             Trace.Error("Bluetooth Adapter: Error[ " + message + " ]");
             if (AdapterEnableTimer != null)
             {
                 AdapterEnableTimer.Cancel();
             }
-            Cycle();
+            SuccessfullyRecovered = false;
+            Cycle(hard || recovered);
         }
 
         protected void Enable()
@@ -149,7 +153,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             {
                 if (BluetoothAdapter.Enable())
                 {
-                    AdapterEnableTimer = new Bluetooth.Timer(_ => Error("Failed To Enable"), null, AdapterEnableTimeout, Timeout.Infinite); ;
+                    AdapterEnableTimer = new Bluetooth.Timer(_ => Error("Failed To Enable", true), null, AdapterEnableTimeout, Timeout.Infinite); ;
                 }
                 else
                 {
@@ -207,8 +211,12 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
         }
 
-        protected void Cycle()
+        protected void Cycle(bool hard = false)
         {
+            if (hard)
+            {
+                Shell.Command("am force-stop com.android.bluetooth");
+            }
             AutoEnable = true;
             Disable();
         }
@@ -234,31 +242,64 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
         }
 
+        protected volatile bool Running = false;
         protected Bluetooth.Timer MonitorRadioTimer;
         protected void MonitorRadio(bool initial = false)
         {
-            bool activity = CallbackQueuer.ActivitySinceLastCheck;
-#if DEBUG
-            Trace.Info("Monitoring Activity: " + activity);
-#endif
-            if (!activity)
+            if (Running)
             {
-                StopAdapterScan();
-                StartAdapterScan();
+                int activity = CallbackQueuer.ActivitySinceLastCheck;
+#if DEBUG
+                Trace.Info("Monitoring Activity: " + activity);
+#endif
+                if (activity <= 0)
+                {
+                    StopAdapterScan();
+                    Disable();
+                    Shell.Command("am force-stop com.android.bluetooth");
+                    Enable();
+                    StartAdapterScan();
+                }
+                else
+                {
+                    ContinueMonitorRadio(activity);
+                }
             }
-            StartMonitorRadio(!activity);
         }
 
-        protected void StartMonitorRadio(bool delay = false)
+        protected DateTime MonitorStartTime;
+        protected void StartMonitorRadio(int timeout = 15000)
         {
-            int timeout = (delay) ? 120000 : 15000;
+            Running = true;
             if (MonitorRadioTimer != null)
             { MonitorRadioTimer.Cancel(); }
             MonitorRadioTimer = new Bluetooth.Timer(_ => MonitorRadio(), null, timeout, Timeout.Infinite);
+            MonitorStartTime = DateTime.Now;
+        }
+
+        protected int LastActivityRatio = 0;
+        protected void ContinueMonitorRadio(int activity = 0)
+        {
+            double elapsed = (DateTime.Now - MonitorStartTime).TotalSeconds;
+            int activityRatio = (int)(activity / elapsed);
+
+            int timeout = 10000;
+            if (activityRatio >= 10)
+            {
+                timeout = 2000;
+            }
+            if (activityRatio < (LastActivityRatio * 0.75))
+            {
+                timeout = 1000;
+            }
+
+            LastActivityRatio = activityRatio;
+            StartMonitorRadio(timeout);
         }
 
         protected void StopMonitorRadio()
         {
+            Running = false;
             MonitorRadioTimer.Cancel();
         }
 
@@ -277,11 +318,15 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                 {
                     Error("Start LE Scan Error");
                 }
-                else { StartMonitorRadio(); }
-            }
+                else
+                {
+                    SuccessfullyRecovered = true;
 #if DEBUG
-            Trace.Info("LE Scanner: Starting");
+                    Trace.Info("LE Scanner: Starting");
 #endif
+                    StartMonitorRadio();
+                }
+            }
         }
 
         public void StopLEScan()
@@ -316,7 +361,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 #if DEBUG
             Trace.Info("Bluetooth Adapter: Starting Cache Clear");
 #endif
-            if (!IsEnabled)
+            if (true /*!IsEnabled*/)
             {
                 Shell.Command("pm disable com.android.bluetooth");
                 Shell.Command("am force-stop com.android.bluetooth");
