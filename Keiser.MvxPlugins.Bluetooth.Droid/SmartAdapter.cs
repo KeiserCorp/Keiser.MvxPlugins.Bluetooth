@@ -243,6 +243,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         }
 
         protected volatile bool Running = false;
+        protected volatile bool HardResetFresh = true;
         protected Bluetooth.Timer MonitorRadioTimer;
         protected void MonitorRadio(bool initial = false)
         {
@@ -252,13 +253,19 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 #if DEBUG
                 Trace.Info("Monitoring Activity: " + activity);
 #endif
-                if (activity <= 0)
+                if (HardResetFresh && activity > 0)
+                {
+                    HardResetFresh = false;
+                }
+
+                if (activity == 0 && !HardResetFresh)
                 {
                     StopAdapterScan();
                     Disable();
                     Shell.Command("am force-stop com.android.bluetooth");
                     Enable();
                     StartAdapterScan();
+                    HardResetFresh = true;
                 }
                 else
                 {
