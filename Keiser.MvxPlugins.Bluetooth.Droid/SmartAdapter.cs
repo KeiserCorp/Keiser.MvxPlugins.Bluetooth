@@ -86,6 +86,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
         public Adapter()
         {
             Register();
+            //ClearCache();
         }
 
         protected override void Dispose(bool disposing)
@@ -123,9 +124,14 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
         }
 
+        protected int FailedRecoverCount = 0;
         protected bool SuccessfullyRecovered = true;
         protected void Error(string message = "Unknown", bool hard = false)
         {
+            if (SuccessfullyRecovered)
+            {
+                FailedRecoverCount = 0;
+            }
             bool recovered = SuccessfullyRecovered;
             Trace.Error("Bluetooth Adapter: Error[ " + message + " ]");
             if (AdapterEnableTimer != null)
@@ -133,7 +139,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                 AdapterEnableTimer.Cancel();
             }
             SuccessfullyRecovered = false;
-            Cycle(hard || recovered);
+            FailedRecoverCount++;
+            Cycle(hard || !recovered, FailedRecoverCount > 2);
         }
 
         protected void Enable()
@@ -153,7 +160,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             {
                 if (BluetoothAdapter.Enable())
                 {
-                    AdapterEnableTimer = new Bluetooth.Timer(_ => Error("Failed To Enable", true), null, AdapterEnableTimeout, Timeout.Infinite); ;
+                    AdapterEnableTimer = new Bluetooth.Timer(_ => Error("Failed To Enable", true), null, AdapterEnableTimeout, Timeout.Infinite);
                 }
                 else
                 {
@@ -161,6 +168,9 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                 }
             }
         }
+
+        protected Bluetooth.Timer StartAdapterTimer;
+        protected const int StartAdapterDelay = 500;
 
         protected bool IsEnabled { get { return (BluetoothAdapter.State == State.On); } }
 
@@ -175,7 +185,8 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
             }
             if (AutoScan)
             {
-                StartAdapterScan();
+                StartAdapterTimer = new Bluetooth.Timer(_ => StartAdapterScan(), null, StartAdapterDelay, Timeout.Infinite);
+                //StartAdapterScan();
             }
         }
 
@@ -199,21 +210,27 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
 #if DEBUG
             Trace.Info("Bluetooth Adapter: Disabled");
 #endif
-            if (AutoEnable)
-            {
-                AutoEnable = false;
-                Enable();
-            }
             if (AutoClearCache)
             {
                 AutoClearCache = false;
                 ClearCache();
             }
+            if (AutoEnable)
+            {
+                AutoEnable = false;
+                Enable();
+            }
         }
 
-        protected void Cycle(bool hard = false)
+        protected void Cycle(bool hard = false, bool dire = false)
         {
-            if (hard)
+#if DEBUG
+            Trace.Info("LE Scanner: Cycling [Hard: " + hard + ", Dire: " + dire + "]");
+#endif
+            if (dire) {
+                AutoClearCache = true;
+            }
+            else if (hard)
             {
                 Shell.Command("am force-stop com.android.bluetooth");
             }
@@ -264,7 +281,7 @@ namespace Keiser.MvxPlugins.Bluetooth.Droid
                     Disable();
                     Shell.Command("am force-stop com.android.bluetooth");
                     Enable();
-                    StartAdapterScan();
+                    //StartAdapterScan();
                     HardResetFresh = true;
                 }
                 else
