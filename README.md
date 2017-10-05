@@ -1,5 +1,5 @@
-Mvx Bluetooth Plugin for MvvmCross
-========================
+# Mvx Bluetooth Plugin for MvvmCross
+:no_entry: [DEPRECATED] This repository is no longer maintained.
 
 ## Project
 MvvmCross plugin which adds Bluetooth LE support to cross-platform projects.
@@ -11,11 +11,7 @@ Current Platform Support:
 ## Install & Use
 * NuGet: https://www.nuget.org/packages/Keiser.MvxPlugins.Bluetooth/
 
-## TODO
-* Add additional LE features
+## Copyright and License
+Copyright 2014 [Keiser Corporation](http://keiser.com/).
 
-## Contributors
-* [bayssmekanique](https://github.com/bayssmekanique)
-
-## License
-Licensed under [The MIT License (MIT)](http://opensource.org/licenses/MIT)
+Licensed under the [MIT license](LICENSE.md).
